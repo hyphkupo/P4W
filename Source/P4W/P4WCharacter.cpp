@@ -18,6 +18,14 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 AP4WCharacter::AP4WCharacter()
 {
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> CharacterMesh(TEXT("/Game/Cat_Animation_Pack/Demo/Cat_Model/SM_Cat.SM_Cat"));
+	if (CharacterMesh.Object)
+	{
+		GetMesh()->SetSkeletalMesh(CharacterMesh.Object);
+	}
+
+	GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
