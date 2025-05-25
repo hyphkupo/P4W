@@ -18,7 +18,7 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 AP4WCharacter::AP4WCharacter()
 {
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> CharacterMesh(TEXT("/Game/Cat_Animation_Pack/Demo/Cat_Model/SM_Cat.SM_Cat"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> CharacterMesh(TEXT("/Game/Cat_Simple/Cat/Meshes/Mesh_Cat_Simple.Mesh_Cat_Simple"));
 	if (CharacterMesh.Object)
 	{
 		GetMesh()->SetSkeletalMesh(CharacterMesh.Object);
@@ -60,12 +60,23 @@ AP4WCharacter::AP4WCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	
+	SetupPlayerInputComponent();
 }
 
 void AP4WCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
+	//APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	//if (PlayerController)
+	//{
+	//	EnableInput(PlayerController);
+	//	if (UEnhancedInputLocalPlayerSubsystem* SubSystem =
+	//		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+	//		SubSystem->AddMappingContext(DefaultContext, 0);
+	//}
 }
 
 //////////////////////////////////////////////////////////////////////////
