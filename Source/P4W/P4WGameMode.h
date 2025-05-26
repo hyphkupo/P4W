@@ -14,6 +14,3 @@ class AP4WGameMode : public AGameModeBase
 public:
 	AP4WGameMode();
 };
-
-
-
