@@ -124,6 +124,7 @@ void AP4WCharacter::BeginPlay()
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
 	{
+		//PlayerController->PostSpawnInitialize
 		EnableInput(PlayerController);
 		if (UEnhancedInputLocalPlayerSubsystem* SubSystem =
 			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))

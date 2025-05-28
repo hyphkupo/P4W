@@ -37,6 +37,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
 	FVector Velocity;
 
+	//// 캐릭터의 이전(현재 틱 이전) 점프 속도를 저장할 변수.
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
+	//FVector PastVelocity;
+
+	//// 캐릭터의 가속도를 저장할 변수
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
+	//float Accel;
+
 	// 캐릭터의 땅에서의 이동 속도를 저장할 변수.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
 	float GroundSpeed;

@@ -31,13 +31,31 @@ void UP4WAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
+	//UE_LOG(LogTemp, Log, TEXT("Accel: %f"), Accel);
+
 	// 필요한 값 업데이트
 	if (Movement)
 	{
 		Velocity = Movement->Velocity;
+		
+		//UE_LOG(LogTemp, Log, TEXT("Test PastZ: %f"), PastVelocity.Z);
+		//UE_LOG(LogTemp, Log, TEXT("Test Z: %f"), Velocity.Z);
+		//UE_LOG(LogTemp, Log, TEXT("Test Accel: %f"), Accel);
+
+		//if (Velocity.Z > 0)
+		//{
+		//	Accel = Velocity.Z - PastVelocity.Z;
+		//}
+		//else
+		//{
+		//	Accel = PastVelocity.Z - Velocity.Z;
+		//}
+		//Movement->GroundFriction = 0.0f;
+
 		GroundSpeed = Velocity.Size2D();
 		bIsIdle = GroundSpeed < MovingThreshold;
 		bIsFalling = Movement->IsFalling();
 		bIsJumping = bIsFalling & (Velocity.Z > JumpingThreshold);
+		//PastVelocity = Velocity;
 	}
 }
