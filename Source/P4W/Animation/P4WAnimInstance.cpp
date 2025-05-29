@@ -50,7 +50,6 @@ void UP4WAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		//{
 		//	Accel = PastVelocity.Z - Velocity.Z;
 		//}
-		//Movement->GroundFriction = 0.0f;
 
 		GroundSpeed = Velocity.Size2D();
 		bIsIdle = GroundSpeed < MovingThreshold;
