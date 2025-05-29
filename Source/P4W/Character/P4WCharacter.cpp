@@ -70,7 +70,7 @@ AP4WCharacter::AP4WCharacter()
 	}
 
 	// Animation
-	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstanceRef(TEXT("/Game/Animation/ABP_P4WCharacter.ABP_P4WCharacter_C"));
+	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstanceRef(TEXT("/Game/Animation/ABP_P4WCharacter1.ABP_P4WCharacter1_C"));
 	if (AnimInstanceRef.Class)
 	{
 		GetMesh()->SetAnimInstanceClass(AnimInstanceRef.Class);
@@ -230,6 +230,22 @@ void AP4WCharacter::Move(const FInputActionValue& Value)
 
 void AP4WCharacter::Jump(const FInputActionValue& Value)
 {
+	//GetCharacterMovement()->Velocity = FVector::ZeroVector;
+	//APlayerController* PlayerController = Cast<APlayerController>(GetController());
+
+	//DisableInput(PlayerController);
+
+	//GetMesh()->GetAnimInstance()->Montage_Play(AutoAttackMontage);
+
+	//FTimerHandle Handle;
+	//GetWorld()->GetTimerManager().SetTimer(
+	//	Handle,
+	//	FTimerDelegate::CreateLambda([&]()
+	//		{
+	//			EnableInput(PlayerController);
+	//		}
+	//	), 1.0f, false
+	//);
 }
 
 void AP4WCharacter::Look(const FInputActionValue& Value)
@@ -265,7 +281,7 @@ void AP4WCharacter::AutoAttack(const FInputActionValue& Value)
 		Handle,
 		FTimerDelegate::CreateLambda([&]()
 			{
-				EnableInput(PlayerController);
+				EnableInput(Cast<APlayerController>(GetController()));
 			}
 		), 1.0f, false
 	);
@@ -276,13 +292,13 @@ void AP4WCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 }
 
-void AP4WCharacter::ClientRPCPlayAnimation_Implementation(AP4WCharacter* CharacterToPlay)
-{
-	if (CharacterToPlay)
-	{
-		GetMesh()->GetAnimInstance()->Montage_Play(AutoAttackMontage);
-	}
-}
+//void AP4WCharacter::ClientRPCPlayAnimation_Implementation(AP4WCharacter* CharacterToPlay)
+//{
+//	if (CharacterToPlay)
+//	{
+//		GetMesh()->GetAnimInstance()->Montage_Play(AutoAttackMontage);
+//	}
+//}
 
 //DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All)
 //{

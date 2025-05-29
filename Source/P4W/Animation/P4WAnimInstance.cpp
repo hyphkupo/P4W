@@ -23,6 +23,8 @@ void UP4WAnimInstance::NativeInitializeAnimation()
 	{
 		// 무브먼트 컴포넌트 검색
 		Movement = Owner->GetCharacterMovement();
+		//Owner->GetCharacterMovement()->GroundFriction = 20.0f;
+		//Movement->BrakingDecelerationWalking = 2050.0f;
 	}
 }
 

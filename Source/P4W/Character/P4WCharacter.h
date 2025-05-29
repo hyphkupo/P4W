@@ -62,8 +62,8 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// 공격 애니메이션을 재생 요청할 때 사용할 Client RPC 함수
-	UFUNCTION(Client, Unreliable)
-	void ClientRPCPlayAnimation(AP4WCharacter* CharacterToPlay);
+	//UFUNCTION(Client, Unreliable)
+	//void ClientRPCPlayAnimation(AP4WCharacter* CharacterToPlay);
 
 protected:
 	
