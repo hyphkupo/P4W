@@ -23,6 +23,8 @@ class AP4WCharacter : public ACharacter
 public:
 	AP4WCharacter();
 
+	virtual void PostInitializeComponents() override;
+
 // Input
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -40,8 +42,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> ZoomAction;
 
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	//TObjectPtr<class UInputAction> AttackAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> AutoAttackAction;
 
 protected:
 	/** Called for movement input */
@@ -53,6 +55,15 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	void Zoom(const FInputActionValue& Value);
+
+	void AutoAttack(const FInputActionValue& Value);
+
+	// 프로퍼티 리플리케이션 등록을 위한 함수 오버라이딩
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	// 공격 애니메이션을 재생 요청할 때 사용할 Client RPC 함수
+	UFUNCTION(Client, Unreliable)
+	void ClientRPCPlayAnimation(AP4WCharacter* CharacterToPlay);
 
 protected:
 	
@@ -75,4 +86,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCameraComponent> Camera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAnimMontage> AutoAttackMontage;
+
 };

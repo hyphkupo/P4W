@@ -7,10 +7,17 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
+
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
+
+#include "EngineUtils.h"
+#include "GameFramework/PlayerStart.h"
+
+#include "Animation/AnimMontage.h"
+#include "GameFramework/PlayerController.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -56,11 +63,23 @@ AP4WCharacter::AP4WCharacter()
 		ZoomAction = ZoomActionRef.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> AutoAttackActionRef(TEXT("/Game/Input/IA_AutoAttack.IA_AutoAttack"));
+	if (AutoAttackActionRef.Object)
+	{
+		AutoAttackAction = AutoAttackActionRef.Object;
+	}
+
 	// Animation
 	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstanceRef(TEXT("/Game/Animation/ABP_P4WCharacter.ABP_P4WCharacter_C"));
 	if (AnimInstanceRef.Class)
 	{
 		GetMesh()->SetAnimInstanceClass(AnimInstanceRef.Class);
+	}
+
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> AutoAttackMontageRef(TEXT("/Game/Animation/AM_AutoAttack.AM_AutoAttack"));
+	if (AutoAttackMontageRef.Object)
+	{
+		AutoAttackMontage = AutoAttackMontageRef.Object;
 	}
 
 	GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
@@ -117,6 +136,17 @@ AP4WCharacter::AP4WCharacter()
 	Camera->bUsePawnControlRotation = false;
 }
 
+void AP4WCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	//APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	//if (PlayerController)
+	//{
+	//	PlayerController->GetPawn()->SetActorLocation(FVector(FMath::RandRange(10.0f, 30.0f), 30.0f, 230.0f));
+	//}
+}
+
 void AP4WCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -124,6 +154,8 @@ void AP4WCharacter::BeginPlay()
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
 	{
+		//PlayerController->GetPawn()->SetActorLocation(FVector(FMath::RandRange(10.0f, 30.0f), 30.0f, 230.0f));
+
 		//PlayerController->PostSpawnInitialize
 		EnableInput(PlayerController);
 		if (UEnhancedInputLocalPlayerSubsystem* SubSystem =
@@ -132,6 +164,20 @@ void AP4WCharacter::BeginPlay()
 			SubSystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	//for (APlayerStart* PlayerStart : TActorRange<APlayerStart>(GetWorld()))
+	//{
+	//	PlayerStart->SetActorLocation(FVector(1000.0f, 30.0f, 230.0f));
+	//}
+
+	//FVector MyCharacterPosition = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
+	//for (APlayerController* PlayerController : TActorRange<APlayerStart>(GetWorld()))
+	//{
+	//	PlayerStart->SetActorLocation(FVector(1000.0f, 30.0f, 230.0f));
+	//}
+
+	//GetWorld()->GetFirstPlayerController()->GetPawn()->SetActorLocation(FVector(30.0f, 30.0f, 100.0f));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Player Location: %s"), *MyCharacterPosition.ToString()));
 }
 
 void AP4WCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -139,17 +185,23 @@ void AP4WCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 	if (EnhancedInputComponent)
 	{
+		// Character Section
 		// Move
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Move);
 
 		// Jump
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		
+		// Camera Section
 		// Look
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Look);
 		
 		// Zoom
 		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Zoom);
+
+		// Attack Section
+		// Auto Attack
+		EnhancedInputComponent->BindAction(AutoAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacter::AutoAttack);
 	}
 }
 
@@ -198,6 +250,38 @@ void AP4WCharacter::Zoom(const FInputActionValue& Value)
 	float ChangeLength;
 	ChangeLength = SpringArm->TargetArmLength - ZoomVector.X * 10.0f;
 	SpringArm->TargetArmLength = FMath::Clamp(ChangeLength, 50.0f, 800.0f);
+}
+
+void AP4WCharacter::AutoAttack(const FInputActionValue& Value)
+{
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	
+	DisableInput(PlayerController);
+
+	GetMesh()->GetAnimInstance()->Montage_Play(AutoAttackMontage);
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				EnableInput(PlayerController);
+			}
+		), 1.0f, false
+	);
+}
+
+void AP4WCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+
+}
+
+void AP4WCharacter::ClientRPCPlayAnimation_Implementation(AP4WCharacter* CharacterToPlay)
+{
+	if (CharacterToPlay)
+	{
+		GetMesh()->GetAnimInstance()->Montage_Play(AutoAttackMontage);
+	}
 }
 
 //DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All)
