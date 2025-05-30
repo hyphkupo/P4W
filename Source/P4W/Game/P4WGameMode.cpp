@@ -19,7 +19,7 @@ AP4WGameMode::AP4WGameMode()
 
 void AP4WGameMode::RestartPlayerAtTransform(AController* NewPlayer, const FTransform& SpawnTransform)
 {
-	FTransform(FVector(FMath::RandRange(10.0f, 30.0f), 30.0f, 230.0f));
+	//FTransform(FVector(FMath::RandRange(10.0f, 30.0f), 30.0f, 230.0f));
 	//NewPlayer->GetPawn()->SetActorLocation(FVector(FMath::RandRange(10.0f, 30.0f), 30.0f, 230.0f));
 }
 

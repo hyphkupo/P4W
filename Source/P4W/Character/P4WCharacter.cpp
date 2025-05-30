@@ -12,12 +12,14 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "InputMappingContext.h"
+#include "GameFramework/PlayerController.h"
 
 #include "EngineUtils.h"
-#include "GameFramework/PlayerStart.h"
+//#include "GameFramework/PlayerStart.h"
 
 #include "Animation/AnimMontage.h"
-#include "GameFramework/PlayerController.h"
+
+#include "Net/UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -32,13 +34,14 @@ AP4WCharacter::AP4WCharacter()
 		GetMesh()->SetSkeletalMesh(CharacterMesh.Object);
 	}
 
-	// Input
+// Input
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> DefaultMappingContextRef(TEXT("/Game/Input/IMC_Default.IMC_Default"));
 	if (DefaultMappingContextRef.Object)
 	{
 		DefaultMappingContext = DefaultMappingContextRef.Object;
 	}
 
+// Moving Input
 	static ConstructorHelpers::FObjectFinder<UInputAction> MoveActionRef(TEXT("/Game/Input/IA_Move.IA_Move"));
 	if (MoveActionRef.Object)
 	{
@@ -51,6 +54,7 @@ AP4WCharacter::AP4WCharacter()
 		JumpAction = JumpActionRef.Object;
 	}
 
+// Looking Input
 	static ConstructorHelpers::FObjectFinder<UInputAction> LookActionRef(TEXT("/Game/Input/IA_Look.IA_Look"));
 	if (LookActionRef.Object)
 	{
@@ -63,10 +67,29 @@ AP4WCharacter::AP4WCharacter()
 		ZoomAction = ZoomActionRef.Object;
 	}
 
+// Attack Input
 	static ConstructorHelpers::FObjectFinder<UInputAction> AutoAttackActionRef(TEXT("/Game/Input/IA_AutoAttack.IA_AutoAttack"));
 	if (AutoAttackActionRef.Object)
 	{
 		AutoAttackAction = AutoAttackActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Combo1AttackActionRef(TEXT("/Game/Input/IA_Combo1Attack.IA_Combo1Attack"));
+	if (Combo1AttackActionRef.Object)
+	{
+		Combo1AttackAction = Combo1AttackActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Combo2AttackActionRef(TEXT("/Game/Input/IA_Combo2Attack.IA_Combo2Attack"));
+	if (Combo2AttackActionRef.Object)
+	{
+		Combo2AttackAction = Combo2AttackActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Combo3AttackActionRef(TEXT("/Game/Input/IA_Combo3Attack.IA_Combo3Attack"));
+	if (Combo3AttackActionRef.Object)
+	{
+		Combo3AttackAction = Combo3AttackActionRef.Object;
 	}
 
 	// Animation
@@ -80,6 +103,12 @@ AP4WCharacter::AP4WCharacter()
 	if (AutoAttackMontageRef.Object)
 	{
 		AutoAttackMontage = AutoAttackMontageRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ComboAttackMontageRef(TEXT("/Game/Animation/AM_PLDCombo.AM_PLDCombo"));
+	if (ComboAttackMontageRef.Object)
+	{
+		ComboAttackMontage = ComboAttackMontageRef.Object;
 	}
 
 	GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
@@ -130,21 +159,20 @@ AP4WCharacter::AP4WCharacter()
 	//SpringArm->SocketOffset = FVector(0.0f, 40.0f, 0.0f);
 	//SpringArm->SetRelativeLocation(FVector(0.0f, 70.0f, 90.0f));
 	//SpringArm->SetRelativeRotation(FRotator(-45.0f, 0.0f, 0.0f));
+	
+	// 벽에 부딪히면 자동으로 카메라를 앞으로 이동하도록 하는 변수
+	SpringArm->bDoCollisionTest = false;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
 	Camera->bUsePawnControlRotation = false;
+
+	ComboNum = 0;
 }
 
 void AP4WCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-
-	//APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	//if (PlayerController)
-	//{
-	//	PlayerController->GetPawn()->SetActorLocation(FVector(FMath::RandRange(10.0f, 30.0f), 30.0f, 230.0f));
-	//}
 }
 
 void AP4WCharacter::BeginPlay()
@@ -180,33 +208,60 @@ void AP4WCharacter::BeginPlay()
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Player Location: %s"), *MyCharacterPosition.ToString()));
 }
 
+void AP4WCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+}
+
+void AP4WCharacter::ServerRPCAutoAttack_Implementation()
+{
+	UE_LOG(LogTemp, Log, TEXT("ServerRPCAutoAttack Begin"));
+	//PlayAutoAttackAnimation();
+	MulticastRPCAutoAttack();
+	UE_LOG(LogTemp, Log, TEXT("ServerRPCAutoAttack End"));
+}
+
+void AP4WCharacter::MulticastRPCAutoAttack_Implementation()
+{
+	//if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
+	//{
+	//	PlayAutoAttackAnimation();
+	//}
+	PlayAutoAttackAnimation();
+}
+
 void AP4WCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 	if (EnhancedInputComponent)
 	{
-		// Character Section
+	// Character Section
 		// Move
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Move);
 
 		// Jump
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		
-		// Camera Section
+	// Camera Section
 		// Look
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Look);
 		
 		// Zoom
 		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Zoom);
 
-		// Attack Section
+	// Attack Section
 		// Auto Attack
 		EnhancedInputComponent->BindAction(AutoAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacter::AutoAttack);
+
+		EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Combo1Attack);
+		EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Combo2Attack);
+		EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Combo3Attack);
 	}
 }
 
 void AP4WCharacter::Move(const FInputActionValue& Value)
 {
+	//UE_LOG(LogTemp, Log, TEXT("Input"));
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
@@ -230,22 +285,6 @@ void AP4WCharacter::Move(const FInputActionValue& Value)
 
 void AP4WCharacter::Jump(const FInputActionValue& Value)
 {
-	//GetCharacterMovement()->Velocity = FVector::ZeroVector;
-	//APlayerController* PlayerController = Cast<APlayerController>(GetController());
-
-	//DisableInput(PlayerController);
-
-	//GetMesh()->GetAnimInstance()->Montage_Play(AutoAttackMontage);
-
-	//FTimerHandle Handle;
-	//GetWorld()->GetTimerManager().SetTimer(
-	//	Handle,
-	//	FTimerDelegate::CreateLambda([&]()
-	//		{
-	//			EnableInput(PlayerController);
-	//		}
-	//	), 1.0f, false
-	//);
 }
 
 void AP4WCharacter::Look(const FInputActionValue& Value)
@@ -274,7 +313,7 @@ void AP4WCharacter::AutoAttack(const FInputActionValue& Value)
 	
 	DisableInput(PlayerController);
 
-	GetMesh()->GetAnimInstance()->Montage_Play(AutoAttackMontage);
+	PlayAutoAttackAnimation();
 
 	FTimerHandle Handle;
 	GetWorld()->GetTimerManager().SetTimer(
@@ -285,11 +324,41 @@ void AP4WCharacter::AutoAttack(const FInputActionValue& Value)
 			}
 		), 1.0f, false
 	);
+
+	ServerRPCAutoAttack();
 }
 
-void AP4WCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AP4WCharacter::Combo1Attack(const FInputActionValue& Value)
 {
+	ComboNum = 1;
+	PlayComboAttackAnimation(ComboNum);
+}
 
+void AP4WCharacter::Combo2Attack(const FInputActionValue& Value)
+{
+	ComboNum = 2;
+	PlayComboAttackAnimation(ComboNum);
+}
+
+void AP4WCharacter::Combo3Attack(const FInputActionValue& Value)
+{
+	ComboNum = 3;
+	PlayComboAttackAnimation(ComboNum);
+}
+
+void AP4WCharacter::PlayAutoAttackAnimation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->Montage_Play(AutoAttackMontage);
+}
+
+void AP4WCharacter::PlayComboAttackAnimation(int32 CurrentComboNum)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	GetMesh()->GetAnimInstance()->Montage_Play(ComboAttackMontage);
+
+	FName ComboNumber = *FString::Printf(TEXT("ComboAttack%d"), CurrentComboNum);
+	AnimInstance->Montage_JumpToSection(ComboNumber, ComboAttackMontage);
 }
 
 //void AP4WCharacter::ClientRPCPlayAnimation_Implementation(AP4WCharacter* CharacterToPlay)

@@ -30,34 +30,60 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputMappingContext> DefaultMappingContext;
 
+// Movement Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> MoveAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> JumpAction;
 
+// Looking Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> LookAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> ZoomAction;
 
+// Attack Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> AutoAttackAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Combo1AttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Combo2AttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Combo3AttackAction;
+
 protected:
-	/** Called for movement input */
+// Called for input
+// Movement Input
 	void Move(const FInputActionValue& Value);
 
 	void Jump(const FInputActionValue& Value);
 
-	/** Called for looking input */
+// Looking Input
 	void Look(const FInputActionValue& Value);
 
 	void Zoom(const FInputActionValue& Value);
 
+// Attack Input
 	void AutoAttack(const FInputActionValue& Value);
+	
+	void Combo1Attack(const FInputActionValue& Value);
+	
+	void Combo2Attack(const FInputActionValue& Value);
+	
+	void Combo3Attack(const FInputActionValue& Value);
 
+// Play AnimMontage
+	void PlayAutoAttackAnimation();
+
+	void PlayComboAttackAnimation(int32 CurrentComboNum);
+
+protected:
 	// 프로퍼티 리플리케이션 등록을 위한 함수 오버라이딩
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -65,7 +91,11 @@ protected:
 	//UFUNCTION(Client, Unreliable)
 	//void ClientRPCPlayAnimation(AP4WCharacter* CharacterToPlay);
 
-protected:
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCAutoAttack();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCAutoAttack();
 	
 protected:
 	// APawn interface
@@ -87,7 +117,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCameraComponent> Camera;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> AutoAttackMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAnimMontage> ComboAttackMontage;
+
+protected:
+	int32 ComboNum;
 };
