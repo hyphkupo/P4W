@@ -22,7 +22,7 @@ void AP4WCharacterPlayer_WHM::SetupPlayerInputComponent(UInputComponent* PlayerI
 	{
 	// Attack Section
 		// Combo Attack
-		EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_WHM::Combo1Attack);
+		EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_WHM::BasicAttack);
 		EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_WHM::Combo2Attack);
 		EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_WHM::Combo3Attack);
 	}
