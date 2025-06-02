@@ -1,0 +1,5 @@
+Name,MaxHP,MaxMp,Attack,AttackRange,AttackSpeed
+PLD,2000,1000,30,50,1
+WHM,1100,1000,10,50,1
+DRG,1300,1000,50,50,1
+BLM,1000,1000,1,50,1

@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
-#include "P4WCharacter.generated.h"
+#include "P4WCharacterBase.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
@@ -16,12 +16,12 @@ struct FInputActionValue;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class AP4WCharacter : public ACharacter
+class AP4WCharacterBase : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
-	AP4WCharacter();
+	AP4WCharacterBase();
 
 	virtual void PostInitializeComponents() override;
 
@@ -29,6 +29,9 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputMappingContext> DefaultMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputMappingContext> DefaultMappingContext2;
 
 // Movement Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -61,35 +64,31 @@ protected:
 // Called for input
 // Movement Input
 	void Move(const FInputActionValue& Value);
-
 	void Jump(const FInputActionValue& Value);
 
 // Looking Input
 	void Look(const FInputActionValue& Value);
-
 	void Zoom(const FInputActionValue& Value);
 
 // Attack Input
 	void AutoAttack(const FInputActionValue& Value);
 	
 	void Combo1Attack(const FInputActionValue& Value);
-	
 	void Combo2Attack(const FInputActionValue& Value);
-	
 	void Combo3Attack(const FInputActionValue& Value);
 
 // Play AnimMontage
 	void PlayAutoAttackAnimation();
 
-	void PlayComboAttackAnimation(int32 CurrentComboNum);
+	void PlayComboAttackAnimation(int32 Num);
 
 protected:
 	// 프로퍼티 리플리케이션 등록을 위한 함수 오버라이딩
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	// 공격 애니메이션을 재생 요청할 때 사용할 Client RPC 함수
-	//UFUNCTION(Client, Unreliable)
-	//void ClientRPCPlayAnimation(AP4WCharacter* CharacterToPlay);
+	// Auto Attack
+	UFUNCTION(Client, Unreliable)
+	void ClientRPCAutoAttack();
 
 	UFUNCTION(Server, Unreliable)
 	void ServerRPCAutoAttack();
@@ -97,12 +96,24 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastRPCAutoAttack();
 	
+	// Combo Attack
+	UFUNCTION(Client, Unreliable)
+	void ClientRPCComboAttack(AP4WCharacterBase* CharacterToPlay);
+
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCComboAttack(int32 Num);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCComboAttack(int32 Num);
+	
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	// To add mapping context
 	virtual void BeginPlay();
+
+	virtual void PostNetInit() override;
 
 public:
 	///** Returns CameraBoom subobject **/
@@ -117,6 +128,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCameraComponent> Camera;
 
+// Animation Montage
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> AutoAttackMontage;
 
@@ -124,5 +137,6 @@ protected:
 	TObjectPtr<class UAnimMontage> ComboAttackMontage;
 
 protected:
+	UPROPERTY()
 	int32 ComboNum;
 };

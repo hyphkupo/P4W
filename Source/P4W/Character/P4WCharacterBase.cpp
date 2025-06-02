@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "P4WCharacter.h"
+#include "P4WCharacterBase.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -21,12 +21,14 @@
 
 #include "Net/UnrealNetwork.h"
 
+#include "P4W.h"
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
 // AP4WCharacter
 
-AP4WCharacter::AP4WCharacter()
+AP4WCharacterBase::AP4WCharacterBase()
 {
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> CharacterMesh(TEXT("/Game/Cat_Simple/Cat/Meshes/Mesh_Cat_Simple.Mesh_Cat_Simple"));
 	if (CharacterMesh.Object)
@@ -40,6 +42,12 @@ AP4WCharacter::AP4WCharacter()
 	{
 		DefaultMappingContext = DefaultMappingContextRef.Object;
 	}
+
+	//static ConstructorHelpers::FObjectFinder<UInputMappingContext> DefaultMappingContext2Ref(TEXT("/Game/Input/IMC_2.IMC_2"));
+	//if (DefaultMappingContext2Ref.Object)
+	//{
+	//	DefaultMappingContext2 = DefaultMappingContext2Ref.Object;
+	//}
 
 // Moving Input
 	static ConstructorHelpers::FObjectFinder<UInputAction> MoveActionRef(TEXT("/Game/Input/IA_Move.IA_Move"));
@@ -166,16 +174,14 @@ AP4WCharacter::AP4WCharacter()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
 	Camera->bUsePawnControlRotation = false;
-
-	ComboNum = 0;
 }
 
-void AP4WCharacter::PostInitializeComponents()
+void AP4WCharacterBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 }
 
-void AP4WCharacter::BeginPlay()
+void AP4WCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -184,8 +190,9 @@ void AP4WCharacter::BeginPlay()
 	{
 		//PlayerController->GetPawn()->SetActorLocation(FVector(FMath::RandRange(10.0f, 30.0f), 30.0f, 230.0f));
 
-		//PlayerController->PostSpawnInitialize
 		EnableInput(PlayerController);
+
+		// IMC 선택
 		if (UEnhancedInputLocalPlayerSubsystem* SubSystem =
 			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
@@ -193,6 +200,7 @@ void AP4WCharacter::BeginPlay()
 		}
 	}
 
+	/*
 	//for (APlayerStart* PlayerStart : TActorRange<APlayerStart>(GetWorld()))
 	//{
 	//	PlayerStart->SetActorLocation(FVector(1000.0f, 30.0f, 230.0f));
@@ -206,60 +214,117 @@ void AP4WCharacter::BeginPlay()
 
 	//GetWorld()->GetFirstPlayerController()->GetPawn()->SetActorLocation(FVector(30.0f, 30.0f, 100.0f));
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Player Location: %s"), *MyCharacterPosition.ToString()));
+	*/
 }
 
-void AP4WCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AP4WCharacterBase::PostNetInit()
+{
+	Super::PostNetInit();
+}
+
+void AP4WCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//DOREPLIFETIME(AP4WCharacterBase, ComboNum);
 }
 
-void AP4WCharacter::ServerRPCAutoAttack_Implementation()
+void AP4WCharacterBase::ClientRPCAutoAttack_Implementation()
 {
-	UE_LOG(LogTemp, Log, TEXT("ServerRPCAutoAttack Begin"));
-	//PlayAutoAttackAnimation();
-	MulticastRPCAutoAttack();
-	UE_LOG(LogTemp, Log, TEXT("ServerRPCAutoAttack End"));
 }
 
-void AP4WCharacter::MulticastRPCAutoAttack_Implementation()
+void AP4WCharacterBase::ServerRPCAutoAttack_Implementation()
 {
-	//if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
-	//{
-	//	PlayAutoAttackAnimation();
-	//}
 	PlayAutoAttackAnimation();
+	MulticastRPCAutoAttack();
 }
 
-void AP4WCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AP4WCharacterBase::MulticastRPCAutoAttack_Implementation()
+{
+	if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
+	{
+		PlayAutoAttackAnimation();
+	}
+}
+
+void AP4WCharacterBase::ClientRPCComboAttack_Implementation(AP4WCharacterBase* CharacterToPlay)
+{
+	if (CharacterToPlay)
+	{
+		PlayComboAttackAnimation(ComboNum);
+	}
+	//MulticastRPCAutoAttack();
+}
+
+void AP4WCharacterBase::ServerRPCComboAttack_Implementation(int32 Num)
+{
+	//UE_LOG(LogTemp, Log, TEXT("ServerRPCAutoAttack Begin"));
+	PlayComboAttackAnimation(Num);
+	MulticastRPCComboAttack(Num);
+
+	//for (auto* PlayerController : TActorRange<APlayerController>(GetWorld()))
+	//{
+	//	// 서버에 있는 클라이언트에 해당하는 플레이어 컨트롤러 거르기.
+	//	if (PlayerController && GetController() != PlayerController)
+	//	{
+	//		// 클라이언트 중에서 본인이 아닌지 확인.
+	//		// 리슨서버의 컨트롤러 거르기.
+	//		if (!PlayerController->IsLocalController())
+	//		{
+	//			// 여기로 넘어온 플레이어 컨트롤러는
+	//			// 서버도 아니고, 본인 클라이언트도 아님.
+	//			AP4WCharacterBase* OtherPlayer = Cast<AP4WCharacterBase>(PlayerController);
+	//			if (OtherPlayer)
+	//			{
+	//				// Client RPC 전송.
+	//				//ClientRPCPlayAnimation(OtherPlayer);
+	//				OtherPlayer->ClientRPCAutoAttack(this);
+	//			}
+	//		}
+	//	}
+	//}
+	//UE_LOG(LogTemp, Log, TEXT("ServerRPCAutoAttack End"));
+}
+
+void AP4WCharacterBase::MulticastRPCComboAttack_Implementation(int32 Num)
+{
+	if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
+	{
+		PlayComboAttackAnimation(Num);
+	}
+	//UE_LOG(LogTemp, Log, TEXT("[%s] Multicast ComboNum: %d"), LOG_NETMODEINFO, ComboNum);
+}
+
+void AP4WCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 	if (EnhancedInputComponent)
 	{
 	// Character Section
 		// Move
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Move);
 
 		// Jump
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		
 	// Camera Section
 		// Look
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Look);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Look);
 		
 		// Zoom
-		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Zoom);
+		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Zoom);
 
 	// Attack Section
 		// Auto Attack
-		EnhancedInputComponent->BindAction(AutoAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacter::AutoAttack);
+		EnhancedInputComponent->BindAction(AutoAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::AutoAttack);
 
-		EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Combo1Attack);
-		EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Combo2Attack);
-		EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacter::Combo3Attack);
+		EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Combo1Attack);
+		EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Combo2Attack);
+		EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Combo3Attack);
 	}
 }
 
-void AP4WCharacter::Move(const FInputActionValue& Value)
+void AP4WCharacterBase::Move(const FInputActionValue& Value)
 {
 	//UE_LOG(LogTemp, Log, TEXT("Input"));
 	// input is a Vector2D
@@ -283,11 +348,11 @@ void AP4WCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void AP4WCharacter::Jump(const FInputActionValue& Value)
+void AP4WCharacterBase::Jump(const FInputActionValue& Value)
 {
 }
 
-void AP4WCharacter::Look(const FInputActionValue& Value)
+void AP4WCharacterBase::Look(const FInputActionValue& Value)
 {
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
@@ -299,7 +364,7 @@ void AP4WCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void AP4WCharacter::Zoom(const FInputActionValue& Value)
+void AP4WCharacterBase::Zoom(const FInputActionValue& Value)
 {
 	FVector ZoomVector = Value.Get<FVector>();
 	float ChangeLength;
@@ -307,7 +372,7 @@ void AP4WCharacter::Zoom(const FInputActionValue& Value)
 	SpringArm->TargetArmLength = FMath::Clamp(ChangeLength, 50.0f, 800.0f);
 }
 
-void AP4WCharacter::AutoAttack(const FInputActionValue& Value)
+void AP4WCharacterBase::AutoAttack(const FInputActionValue& Value)
 {
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	
@@ -328,46 +393,91 @@ void AP4WCharacter::AutoAttack(const FInputActionValue& Value)
 	ServerRPCAutoAttack();
 }
 
-void AP4WCharacter::Combo1Attack(const FInputActionValue& Value)
+void AP4WCharacterBase::Combo1Attack(const FInputActionValue& Value)
 {
 	ComboNum = 1;
+	
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	DisableInput(PlayerController);
+
 	PlayComboAttackAnimation(ComboNum);
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				EnableInput(Cast<APlayerController>(GetController()));
+			}
+		), 0.8f, false
+	);
+
+	ServerRPCComboAttack(ComboNum);
 }
 
-void AP4WCharacter::Combo2Attack(const FInputActionValue& Value)
+void AP4WCharacterBase::Combo2Attack(const FInputActionValue& Value)
 {
 	ComboNum = 2;
+
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	DisableInput(PlayerController);
+
 	PlayComboAttackAnimation(ComboNum);
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				EnableInput(Cast<APlayerController>(GetController()));
+			}
+		), 0.8f, false
+	);
+
+	ServerRPCComboAttack(ComboNum);
 }
 
-void AP4WCharacter::Combo3Attack(const FInputActionValue& Value)
+void AP4WCharacterBase::Combo3Attack(const FInputActionValue& Value)
 {
 	ComboNum = 3;
+	
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	DisableInput(PlayerController);
+
 	PlayComboAttackAnimation(ComboNum);
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				EnableInput(Cast<APlayerController>(GetController()));
+			}
+		), 0.8f, false
+	);
+
+	ServerRPCComboAttack(ComboNum);
+
+	//UE_LOG(LogTemp, Log, TEXT("[%s] ComboInput ComboNum: %d"), LOG_NETMODEINFO, ComboNum);
 }
 
-void AP4WCharacter::PlayAutoAttackAnimation()
+void AP4WCharacterBase::PlayAutoAttackAnimation()
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->Montage_Play(AutoAttackMontage);
 }
 
-void AP4WCharacter::PlayComboAttackAnimation(int32 CurrentComboNum)
+void AP4WCharacterBase::PlayComboAttackAnimation(int32 Num)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	GetMesh()->GetAnimInstance()->Montage_Play(ComboAttackMontage);
+	AnimInstance->Montage_Play(ComboAttackMontage);
 
-	FName ComboNumber = *FString::Printf(TEXT("ComboAttack%d"), CurrentComboNum);
+	//AnimInstance->InitializeAnimation
+
+	UE_LOG(LogTemp, Log, TEXT("[%s] AttackAnimation ComboNum: %d"), LOG_NETMODEINFO, Num);
+	FName ComboNumber = *FString::Printf(TEXT("ComboAttack%d"), Num);
 	AnimInstance->Montage_JumpToSection(ComboNumber, ComboAttackMontage);
 }
-
-//void AP4WCharacter::ClientRPCPlayAnimation_Implementation(AP4WCharacter* CharacterToPlay)
-//{
-//	if (CharacterToPlay)
-//	{
-//		GetMesh()->GetAnimInstance()->Montage_Play(AutoAttackMontage);
-//	}
-//}
 
 //DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All)
 //{
