@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "UI/P4WHUDWidget.h"
 #include "P4WCharacterBase.generated.h"
 
 class USpringArmComponent;
@@ -139,4 +140,20 @@ protected:
 protected:
 	UPROPERTY()
 	int32 ComboNum;
+
+// Stat Section
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UP4WCharacterStatComponent> Stat;
+
+// UI Widget Section
+protected:
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
+	//TObjectPtr<class UWidgetComponent> HpBar;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UWidgetComponent> HpBar;
+
+	void SetupHUDWidget(UP4WHUDWidget* InHUDWidget);
+
 };

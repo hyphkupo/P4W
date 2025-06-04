@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
+#include "Player/P4WPlayerController.h"
 
 AP4WGameMode::AP4WGameMode()
 {
@@ -14,6 +15,12 @@ AP4WGameMode::AP4WGameMode()
 	if (PlayerPawnBPClass.Class != NULL)
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<APlayerController> PlayerControllerBPClass(TEXT("/Game/Blueprint/BP_P4WPlayerController.BP_P4WPlayerController_C"));
+	if (PlayerControllerBPClass.Class != NULL)
+	{
+		PlayerControllerClass = PlayerControllerBPClass.Class;
 	}
 }
 

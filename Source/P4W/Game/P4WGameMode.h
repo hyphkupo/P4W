@@ -36,5 +36,5 @@ public:
 protected:
 	// 플레이어 스타트 액터 배열.
 	TArray<TObjectPtr<class APlayerStart>> PlayerStartArray;
-	
+
 };

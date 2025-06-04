@@ -4,6 +4,10 @@
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "UI/P4WHpBarWidget.h"
+#include "Components/WidgetComponent.h"
+#include "Blueprint/UserWidget.h"
+#include "CharacterStat/P4WCharacterStatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
@@ -14,14 +18,15 @@
 #include "InputMappingContext.h"
 #include "GameFramework/PlayerController.h"
 
-#include "EngineUtils.h"
-//#include "GameFramework/PlayerStart.h"
-
 #include "Animation/AnimMontage.h"
 
 #include "Net/UnrealNetwork.h"
 
+#include "EngineUtils.h"
 #include "P4W.h"
+
+#include "CharacterStat/P4WCharacterStatComponent.h"
+//#include "GameFramework/PlayerStart.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -174,6 +179,34 @@ AP4WCharacterBase::AP4WCharacterBase()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
 	Camera->bUsePawnControlRotation = false;
+
+	// Stat Component
+	Stat = CreateDefaultSubobject<UP4WCharacterStatComponent>(TEXT("Stat"));
+
+	// Widget Component
+	//HpBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widget"));
+	//HpBar->SetRelativeLocation(FVector(0.0f, 0.0f, 80.0f));
+	
+	//static ConstructorHelpers::FClassFinder<UUserWidget> HpBarWidgetRef(TEXT("/Game/UI/WBP_HpBar.WBP_HpBar_C"));
+	//if (HpBarWidgetRef.Class)
+	//{
+	//	//HpBarWidget = CreateWidget<UUserWidget>(GetWorld(), HpBarWidgetRef.Class);
+	//	//HpBarWidget->AddToViewport();
+
+	//	HpBar->SetWidgetClass(HpBarWidgetRef.Class);
+	//	HpBar->SetWidgetSpace(EWidgetSpace::Screen);
+	//	HpBar->SetDrawSize(FVector2D(150.0f, 15.0f));
+	//	HpBar->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//}
+
+
+	//static ConstructorHelpers::FClassFinder<UP4WHpBarWidget> HpBarRef(TEXT("/Game/UI/WBP_HpBar.WBP_HpBar_C"));
+	//if (HpBarRef.Class)
+	//{
+	//	HpBarWidget = CreateWidget<UUserWidget>(GetWorld(), HpBarRef.Class);
+	//	//HpBar = HpBarRef.Object;
+	//	HpBarWidget->AddToViewport();
+	//}
 }
 
 void AP4WCharacterBase::PostInitializeComponents()
@@ -200,6 +233,8 @@ void AP4WCharacterBase::BeginPlay()
 		}
 	}
 
+	//SetupHUDWidget()
+
 	/*
 	//for (APlayerStart* PlayerStart : TActorRange<APlayerStart>(GetWorld()))
 	//{
@@ -220,6 +255,14 @@ void AP4WCharacterBase::BeginPlay()
 void AP4WCharacterBase::PostNetInit()
 {
 	Super::PostNetInit();
+}
+
+void AP4WCharacterBase::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
+{
+	if (InHUDWidget)
+	{
+		InHUDWidget->UpdateHpBar(200.0f);
+	}
 }
 
 void AP4WCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
