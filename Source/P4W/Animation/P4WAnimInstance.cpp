@@ -38,6 +38,7 @@ void UP4WAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// 필요한 값 업데이트
 	if (Movement)
 	{
+		//UE_LOG(LogTemp, Log, TEXT("Velocity.X: %f, Y: %f, Z: %f"), Velocity.X, Velocity.Y, Velocity.Z);
 		Velocity = Movement->Velocity;
 		
 		//UE_LOG(LogTemp, Log, TEXT("Test PastZ: %f"), PastVelocity.Z);
@@ -53,6 +54,9 @@ void UP4WAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		//	Accel = PastVelocity.Z - Velocity.Z;
 		//}
 
+		//UE_LOG(LogTemp, Log, TEXT("bIsJumpingPlace: %d"), bIsJumpingPlace);
+
+		bIsJumpingPlace = bIsFalling & (Velocity.Z > JumpingThreshold) & (Velocity.X < KINDA_SMALL_NUMBER) & (Velocity.Y < KINDA_SMALL_NUMBER);
 		GroundSpeed = Velocity.Size2D();
 		bIsIdle = GroundSpeed < MovingThreshold;
 		bIsFalling = Movement->IsFalling();
