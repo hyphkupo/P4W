@@ -19,7 +19,10 @@ public:
 
 public:
 	//void FMarkComponentEndOfFrameUpdateState(const FP4WCharacterStat&)
-	void UpdateHpBar(float NewCurrentHp);
+	void UpdateHpBar(float NewCurrentHp, float NewMaxHp);
+	void UpdateMpBar(float NewCurrentMp, float NewMaxMp);
+	void UpdateExpBar(float NewCurrentExp, float NewMaxExp);
+	void UpdateStat(float BaseStat, float ModifierStat);
 
 protected:
 	virtual void NativeConstruct() override;
@@ -27,4 +30,10 @@ protected:
 protected:
 	UPROPERTY()
 	TObjectPtr<class UP4WHpBarWidget> HpBar;
+	
+	UPROPERTY()
+	TObjectPtr<class UP4WMpBarWidget> MpBar;
+	
+	UPROPERTY()
+	TObjectPtr<class UP4WExpBarWidget> ExpBar;
 };

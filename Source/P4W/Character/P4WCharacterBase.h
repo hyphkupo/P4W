@@ -137,6 +137,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> ComboAttackMontage;
 
+public:
+	// 공격 가능 여부 판정
+	UPROPERTY()
+	uint8 bCanAttack : 1;
+
+	//// 이동 가능 여부 판정
+	//UPROPERTY()
+	//uint8 bCanMove;
+
 protected:
 	UPROPERTY()
 	int32 ComboNum;

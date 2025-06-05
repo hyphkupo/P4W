@@ -11,9 +11,21 @@ UP4WHUDWidget::UP4WHUDWidget(const FObjectInitializer& ObjectInitializer)
 {
 }
 
-void UP4WHUDWidget::UpdateHpBar(float NewCurrentHp)
+void UP4WHUDWidget::UpdateHpBar(float NewCurrentHp, float NewMaxHp)
 {
 	HpBar->UpdateHpBar(NewCurrentHp);
+}
+
+void UP4WHUDWidget::UpdateMpBar(float NewCurrentMp, float NewMaxMp)
+{
+}
+
+void UP4WHUDWidget::UpdateExpBar(float NewCurrentExp, float NewMaxExp)
+{
+}
+
+void UP4WHUDWidget::UpdateStat(float BaseStat, float ModifierStat)
+{
 }
 
 void UP4WHUDWidget::NativeConstruct()

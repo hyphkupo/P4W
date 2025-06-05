@@ -10,13 +10,16 @@ struct FP4WCharacterStat : public FTableRowBase
 	GENERATED_BODY()
 
 public:
-	FP4WCharacterStat() : MaxHp(0.0f), MaxMp(0.0f), Attack(0.0f), AttackRange(0.0f), AttackSpeed(0.0f) {}
+	FP4WCharacterStat() : MaxHp(0.0f), MaxMp(0.0f), MaxExp(0.0f), Attack(0.0f), AttackRange(0.0f), AttackSpeed(0.0f) {}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stat)
 	float MaxHp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stat)
 	float MaxMp;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stat)
+	float MaxExp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stat)
 	float Attack;
@@ -42,4 +45,6 @@ public:
 
 		return Result;
 	}
+
+
 };
