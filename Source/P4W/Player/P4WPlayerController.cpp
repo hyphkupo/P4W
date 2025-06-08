@@ -47,15 +47,15 @@ void AP4WPlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 }
 
-void AP4WPlayerController::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
-{
-
-	//if (InHUDWidget)
-	//{
-	//	//InHUDWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());
-	//	//InHUDWidget->UpdateHpBar(Stat->GetMaxHp());
-
-	//	////Stat->OnStatChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateStat);
-	//	//Stat->OnHpChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateHpBar);
-	//}
-}
+//void AP4WPlayerController::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
+//{
+//
+//	//if (InHUDWidget)
+//	//{
+//	//	//InHUDWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());
+//	//	//InHUDWidget->UpdateHpBar(Stat->GetMaxHp());
+//
+//	//	////Stat->OnStatChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateStat);
+//	//	//Stat->OnHpChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateHpBar);
+//	//}
+//}

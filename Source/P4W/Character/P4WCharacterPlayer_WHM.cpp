@@ -40,3 +40,7 @@ void AP4WCharacterPlayer_WHM::DoTAttack(const FInputActionValue& Value)
 void AP4WCharacterPlayer_WHM::SingleHeal(const FInputActionValue& Value)
 {
 }
+
+void AP4WCharacterPlayer_WHM::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
+{
+}

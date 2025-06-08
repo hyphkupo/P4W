@@ -8,24 +8,24 @@ void UP4WCharacterStatWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	for (TFieldIterator<FNumericProperty> PropIt(FP4WCharacterStat::StaticStruct()); PropIt; ++PropIt)
-	{
-		const FName PropKey(PropIt->GetName());
-		const FName TextBaseControlName = *FString::Printf(TEXT("Txt%sBase"), *PropIt->GetName());
-		const FName TextModifierControlName = *FString::Printf(TEXT("Txt%sModifier"), *PropIt->GetName());
+	//for (TFieldIterator<FNumericProperty> PropIt(FP4WCharacterStat::StaticStruct()); PropIt; ++PropIt)
+	//{
+	//	const FName PropKey(PropIt->GetName());
+	//	const FName TextBaseControlName = *FString::Printf(TEXT("Txt%sBase"), *PropIt->GetName());
+	//	const FName TextModifierControlName = *FString::Printf(TEXT("Txt%sModifier"), *PropIt->GetName());
 
-		UTextBlock* BaseTextBlock = Cast<UTextBlock>(GetWidgetFromName(TextBaseControlName));
-		if (BaseTextBlock)
-		{
-			BaseLookup.Add(PropKey, BaseTextBlock);
-		}
+	//	UTextBlock* BaseTextBlock = Cast<UTextBlock>(GetWidgetFromName(TextBaseControlName));
+	//	if (BaseTextBlock)
+	//	{
+	//		BaseLookup.Add(PropKey, BaseTextBlock);
+	//	}
 
-		UTextBlock* ModifierTextBlock = Cast<UTextBlock>(GetWidgetFromName(TextModifierControlName));
-		if (ModifierTextBlock)
-		{
-			ModifierLookup.Add(PropKey, ModifierTextBlock);
-		}
-	}
+	//	UTextBlock* ModifierTextBlock = Cast<UTextBlock>(GetWidgetFromName(TextModifierControlName));
+	//	if (ModifierTextBlock)
+	//	{
+	//		ModifierLookup.Add(PropKey, ModifierTextBlock);
+	//	}
+	//}
 }
 
 void UP4WCharacterStatWidget::UpdateStat(const FP4WCharacterStat& BaseStat, const FP4WCharacterStat& ModifierStat)
@@ -39,16 +39,16 @@ void UP4WCharacterStatWidget::UpdateStat(const FP4WCharacterStat& BaseStat, cons
 		float ModifierData = 0.0f;
 		PropIt->GetValue_InContainer((const void*)&ModifierStat, &ModifierData);
 
-		UTextBlock** BaseTextBlockPtr = BaseLookup.Find(PropKey);
-		if (BaseTextBlockPtr)
-		{
-			(*BaseTextBlockPtr)->SetText(FText::FromString(FString::SanitizeFloat(BaseData)));
-		}
+		//UTextBlock** BaseTextBlockPtr = BaseLookup.Find(PropKey);
+		//if (BaseTextBlockPtr)
+		//{
+		//	(*BaseTextBlockPtr)->SetText(FText::FromString(FString::SanitizeFloat(BaseData)));
+		//}
 
-		UTextBlock** ModifierTextBlockPtr = ModifierLookup.Find(PropKey);
-		if (ModifierTextBlockPtr)
-		{
-			(*ModifierTextBlockPtr)->SetText(FText::FromString(FString::SanitizeFloat(ModifierData)));
-		}
+		//UTextBlock** ModifierTextBlockPtr = ModifierLookup.Find(PropKey);
+		//if (ModifierTextBlockPtr)
+		//{
+		//	(*ModifierTextBlockPtr)->SetText(FText::FromString(FString::SanitizeFloat(ModifierData)));
+		//}
 	}
 }

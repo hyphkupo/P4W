@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "UI/P4WUserWidget.h"
 #include "P4WMpBarWidget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class P4W_API UP4WMpBarWidget : public UUserWidget
+class P4W_API UP4WMpBarWidget : public UP4WUserWidget
 {
 	GENERATED_BODY()
 	
@@ -20,8 +21,7 @@ public:
 	virtual void NativeConstruct() override;
 
 public:
-	FORCEINLINE void SetMaxMp(float NewMaxMp) { MaxMp = NewMaxMp; }
-	void UpdateMpBar(float NewCurrentMp);
+	void UpdateMpBar(float NewCurrentMp, float NewMaxMp);
 
 protected:
 	UPROPERTY()
@@ -29,4 +29,7 @@ protected:
 
 	UPROPERTY()
 	float MaxMp;
+
+	UPROPERTY()
+	float CurrentMp;
 };

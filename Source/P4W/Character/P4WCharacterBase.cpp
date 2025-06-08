@@ -4,7 +4,6 @@
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "UI/P4WHpBarWidget.h"
 #include "Components/WidgetComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "CharacterStat/P4WCharacterStatComponent.h"
@@ -24,6 +23,10 @@
 
 #include "EngineUtils.h"
 #include "P4W.h"
+
+#include "UI/P4WUserWidget.h"
+#include "UI/P4WHpBarWidget.h"
+#include "UI/P4WMpBarWidget.h"
 
 //#include "GameFramework/PlayerStart.h"
 
@@ -252,15 +255,30 @@ void AP4WCharacterBase::PostNetInit()
 	Super::PostNetInit();
 }
 
-void AP4WCharacterBase::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
+int32 AP4WCharacterBase::GetLevel()
 {
-	if (InHUDWidget)
-	{
-		InHUDWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());
-		InHUDWidget->UpdateHpBar(Stat->GetCurrentHp(), Stat->GetMaxHp());
+	return Stat->GetCurrentLevel();
+}
 
-		Stat->OnStatChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateStat);
-		Stat->OnHpChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateHpBar);
+void AP4WCharacterBase::SetLevel(int32 InNewLevel)
+{
+	Stat->SetLevelStat(InNewLevel);
+}
+
+void AP4WCharacterBase::SetupCharacterWidget(UP4WUserWidget* InUserWidget)
+{
+	UP4WHpBarWidget* HpBarWidget = Cast<UP4WHpBarWidget>(InUserWidget);
+	if (HpBarWidget)
+	{
+		HpBarWidget->UpdateHpBar(Stat->GetCurrentHp(), Stat->GetMaxHp());
+		Stat->OnHpChanged.AddUObject(HpBarWidget, &UP4WHpBarWidget::UpdateHpBar);
+	}
+
+	UP4WMpBarWidget* MpBarWidget = Cast<UP4WMpBarWidget>(InUserWidget);
+	if (MpBarWidget)
+	{
+		MpBarWidget->UpdateMpBar(Stat->GetCurrentMp(), Stat->GetMaxMp());
+		Stat->OnMpChanged.AddUObject(MpBarWidget, &UP4WMpBarWidget::UpdateMpBar);
 	}
 }
 

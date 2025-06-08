@@ -4,14 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "Interface/P4WCharacterWidgetInterface.h"
 #include "P4WPlayerController.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class P4W_API AP4WPlayerController : public APlayerController, public IP4WCharacterWidgetInterface
+class P4W_API AP4WPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
@@ -33,7 +32,7 @@ protected:
 	TObjectPtr<class UP4WHUDWidget> P4WHUDWidget;
 
 protected:
-	virtual void SetupHUDWidget(class UP4WHUDWidget* InHUDWidget) override;
+	//virtual void SetupHUDWidget(class UP4WHUDWidget* InHUDWidget) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UP4WCharacterStatComponent> Stat;

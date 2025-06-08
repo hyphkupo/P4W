@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "UI/P4WUserWidget.h"
 #include "P4WExpBarWidget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class P4W_API UP4WExpBarWidget : public UUserWidget
+class P4W_API UP4WExpBarWidget : public UP4WUserWidget
 {
 	GENERATED_BODY()
 	

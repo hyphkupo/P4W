@@ -22,5 +22,5 @@ class P4W_API IP4WCharacterWidgetInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void SetupHUDWidget(class UP4WHUDWidget* InUserWidget) = 0;
+	virtual void SetupCharacterWidget(class UP4WUserWidget* InUserWidget) = 0;
 };

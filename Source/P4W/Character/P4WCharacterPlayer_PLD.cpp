@@ -42,3 +42,17 @@ void AP4WCharacterPlayer_PLD::Combo2Attack(const FInputActionValue& Value)
 void AP4WCharacterPlayer_PLD::Combo3Attack(const FInputActionValue& Value)
 {
 }
+
+void AP4WCharacterPlayer_PLD::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
+{
+	if (InHUDWidget)
+	{
+		InHUDWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());
+		InHUDWidget->UpdateHpBar(Stat->GetCurrentHp(), Stat->GetMaxHp());
+		InHUDWidget->UpdateMpBar(Stat->GetCurrentMp(), Stat->GetMaxMp());
+
+		Stat->OnStatChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateStat);
+		Stat->OnHpChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateHpBar);
+		Stat->OnMpChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateMpBar);
+	}
+}

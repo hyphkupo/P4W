@@ -8,7 +8,7 @@
 // Sets default values for this component's properties
 UP4WCharacterStatComponent::UP4WCharacterStatComponent()
 {
-	CurrentJob = 1;
+	CurrentLevel = 1;
 
 	bWantsInitializeComponent = true;
 }
@@ -17,7 +17,7 @@ void UP4WCharacterStatComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
 
-	SetJobStat(CurrentJob);
+	SetLevelStat(CurrentLevel);
 	ResetStat();
 
 	OnStatChanged.AddUObject(this, &UP4WCharacterStatComponent::SetNewMaxHp);
@@ -30,7 +30,7 @@ void UP4WCharacterStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetJobStat(CurrentJob);
+	SetLevelStat(CurrentLevel);
 	SetHp(BaseStat.MaxHp);
 	SetMp(BaseStat.MaxMp);
 	SetExp(0.0f);			// 이후 저장한 경험치 불러오기
@@ -53,6 +53,12 @@ void UP4WCharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 void UP4WCharacterStatComponent::SetNewMaxHp(const FP4WCharacterStat& InBaseStat, const FP4WCharacterStat& InModifierStat)
 {
+	float PrevMaxHp = MaxHp;
+	MaxHp = GetTotalStat().MaxHp;
+	if (PrevMaxHp != MaxHp)
+	{
+		OnHpChanged.Broadcast(CurrentHp, MaxHp);
+	}
 }
 
 void UP4WCharacterStatComponent::OnRep_CurrentHp()
@@ -106,10 +112,10 @@ void UP4WCharacterStatComponent::OnRep_ModifierStat()
 	OnStatChanged.Broadcast(BaseStat, ModifierStat);
 }
 
-void UP4WCharacterStatComponent::SetJobStat(int32 InNewJob)
+void UP4WCharacterStatComponent::SetLevelStat(int32 InNewLevel)
 {
-	CurrentJob = FMath::Clamp(InNewJob, 1, UP4WGameSingleton::Get().CharacterMaxLevel);
-	BaseStat = UP4WGameSingleton::Get().GetCharacterStat(CurrentJob);
+	CurrentLevel = FMath::Clamp(InNewLevel, 1, UP4WGameSingleton::Get().CharacterMaxLevel);
+	BaseStat = UP4WGameSingleton::Get().GetCharacterStat(CurrentLevel);
 	check(BaseStat.MaxHp > 0.0f);
 }
 
@@ -166,4 +172,11 @@ void UP4WCharacterStatComponent::SetExp(float NewExp)
 
 void UP4WCharacterStatComponent::ResetStat()
 {
+	SetLevelStat(CurrentLevel);
+	MaxHp = BaseStat.MaxHp;
+	MaxMp = BaseStat.MaxMp;
+	MaxExp = BaseStat.MaxExp;
+	SetHp(MaxHp);
+	SetHp(MaxMp);
+	SetHp(MaxExp);
 }

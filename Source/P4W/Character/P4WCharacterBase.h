@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "UI/P4WHUDWidget.h"
+#include "UI/P4WUserWidget.h"
+#include "Interface/P4WCharacterWidgetInterface.h"
 #include "P4WCharacterBase.generated.h"
 
 class USpringArmComponent;
@@ -17,7 +19,7 @@ struct FInputActionValue;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class AP4WCharacterBase : public ACharacter
+class AP4WCharacterBase : public ACharacter, public IP4WCharacterWidgetInterface
 {
 	GENERATED_BODY()
 
@@ -155,6 +157,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UP4WCharacterStatComponent> Stat;
 
+public:
+	int32 GetLevel();
+	void SetLevel(int32 InNewLevel);
+
 // UI Widget Section
 protected:
 	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
@@ -163,6 +169,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UWidgetComponent> HpBar;
 
-	void SetupHUDWidget(UP4WHUDWidget* InHUDWidget);
+	virtual void SetupCharacterWidget(UP4WUserWidget* InUserWidget) override;
 
 };

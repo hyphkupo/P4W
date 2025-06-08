@@ -23,9 +23,7 @@ public:
 
 // Character Stat Data Section
 public:
-	FORCEINLINE FP4WCharacterStat GetCharacterStat(int32 InLevel) const {
-		return CharacterStatTable.IsValidIndex(InLevel) ? CharacterStatTable[InLevel] : FP4WCharacterStat();
-	}
+	FORCEINLINE FP4WCharacterStat GetCharacterStat(int32 InLevel) const { return CharacterStatTable.IsValidIndex(InLevel - 1) ? CharacterStatTable[InLevel - 1] : FP4WCharacterStat(); }
 
 	UPROPERTY()
 	int32 CharacterMaxLevel;

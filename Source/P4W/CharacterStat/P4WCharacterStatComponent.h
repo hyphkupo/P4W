@@ -67,8 +67,8 @@ public:
 
 	FOnStatChangedDelegate OnStatChanged;
 
-	void SetJobStat(int32 InNewJob);
-	FORCEINLINE float GetCurrentJob() const { return CurrentJob; }
+	void SetLevelStat(int32 InNewLevel);
+	FORCEINLINE float GetCurrentLevel() const { return CurrentLevel; }
 	FORCEINLINE void AddBaseStat(const FP4WCharacterStat& InAddBaseStat) { BaseStat = BaseStat + InAddBaseStat; OnStatChanged.Broadcast(GetBaseStat(), GetModifierStat()); }
 	FORCEINLINE void SetBaseStat(const FP4WCharacterStat& InBaseStat) { BaseStat = InBaseStat; OnStatChanged.Broadcast(GetBaseStat(), GetModifierStat()); }
 	FORCEINLINE void SetModifierStat(const FP4WCharacterStat& InModifierStat) { ModifierStat = InModifierStat; OnStatChanged.Broadcast(GetBaseStat(), GetModifierStat()); }
@@ -106,7 +106,7 @@ protected:
 	// MaxHp, MaxMp: 기본 스탯
 
 	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat)
-	float CurrentJob;
+	float CurrentLevel;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentHp, Transient, VisibleInstanceOnly, Category = Stat)
 	float CurrentHp;
@@ -126,7 +126,6 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_MaxExp, Transient, VisibleInstanceOnly, Category = Stat)
 	float MaxExp;
 
-public:
 	// 캐릭터의 기본 스탯
 	UPROPERTY(ReplicatedUsing = OnRep_BaseStat, Transient, VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
 	FP4WCharacterStat BaseStat;

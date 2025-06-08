@@ -3,11 +3,12 @@
 
 #include "UI/P4WHpBarWidget.h"
 #include "Components/ProgressBar.h"
+#include "Interface/P4WCharacterWidgetInterface.h"
 
 UP4WHpBarWidget::UP4WHpBarWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	MaxHp = 200.0f;
+	MaxHp = -1.0f;
 }
 
 void UP4WHpBarWidget::NativeConstruct()
@@ -17,14 +18,22 @@ void UP4WHpBarWidget::NativeConstruct()
 	HpProgressBar = Cast<UProgressBar>(GetWidgetFromName(TEXT("PbHpBar")));
 	ensure(HpProgressBar);
 
-	UpdateHpBar(200.0f);
+	IP4WCharacterWidgetInterface* CharacterWidget = Cast<IP4WCharacterWidgetInterface>(OwningActor);
+	if (CharacterWidget)
+	{
+		CharacterWidget->SetupCharacterWidget(this);
+	}
 }
 
-void UP4WHpBarWidget::UpdateHpBar(float NewCurrentHp)
+void UP4WHpBarWidget::UpdateHpBar(float NewCurrentHp, float NewMaxHp)
 {
+	CurrentHp = NewCurrentHp;
+	MaxHp = NewMaxHp;
+
 	ensure(MaxHp > 0.0f);
 	if (HpProgressBar)
 	{
-		HpProgressBar->SetPercent(NewCurrentHp / MaxHp);
+		HpProgressBar->SetPercent(CurrentHp / MaxHp);
+		UE_LOG(LogTemp, Log, TEXT("HpPercent: %f"), CurrentHp / MaxHp);
 	}
 }

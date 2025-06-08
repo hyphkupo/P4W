@@ -23,3 +23,7 @@ void AP4WCharacterPlayer_BLM::Combo2Attack(const FInputActionValue& Value)
 void AP4WCharacterPlayer_BLM::Combo3Attack(const FInputActionValue& Value)
 {
 }
+
+void AP4WCharacterPlayer_BLM::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
+{
+}

@@ -3,6 +3,7 @@
 
 #include "UI/P4WHUDWidget.h"
 #include "UI/P4WHpBarWidget.h"
+#include "UI/P4WMpBarWidget.h"
 #include "UI/P4WCharacterStatWidget.h"
 #include "Interface/P4WCharacterWidgetInterface.h"
 #include "Interface/P4WCharacterHUDInterface.h"
@@ -14,11 +15,12 @@ UP4WHUDWidget::UP4WHUDWidget(const FObjectInitializer& ObjectInitializer)
 
 void UP4WHUDWidget::UpdateHpBar(float NewCurrentHp, float NewMaxHp)
 {
-	HpBar->UpdateHpBar(NewCurrentHp);
+	HpBar->UpdateHpBar(NewCurrentHp, NewMaxHp);
 }
 
 void UP4WHUDWidget::UpdateMpBar(float NewCurrentMp, float NewMaxMp)
 {
+	MpBar->UpdateMpBar(NewCurrentMp, NewMaxMp);
 }
 
 void UP4WHUDWidget::UpdateExpBar(float NewCurrentExp, float NewMaxExp)
@@ -37,6 +39,9 @@ void UP4WHUDWidget::NativeConstruct()
 
 	HpBar = Cast<UP4WHpBarWidget>(GetWidgetFromName(TEXT("WidgetHPBar")));
 	ensure(HpBar);
+
+	MpBar = Cast<UP4WMpBarWidget>(GetWidgetFromName(TEXT("WidgetMPBar")));
+	ensure(MpBar);
 
 	//CharacterStat = Cast<UP4WCharacterStatWidget>(GetWidgetFromName(TEXT("WidgetCharacterStat")));
 	//ensure(CharacterStat);

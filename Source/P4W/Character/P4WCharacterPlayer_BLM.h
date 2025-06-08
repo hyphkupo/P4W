@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Character/P4WCharacterBase.h"
+#include "Interface/P4WCharacterHUDInterface.h"
 #include "P4WCharacterPlayer_BLM.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class P4W_API AP4WCharacterPlayer_BLM : public AP4WCharacterBase
+class P4W_API AP4WCharacterPlayer_BLM : public AP4WCharacterBase, public IP4WCharacterHUDInterface
 {
 	GENERATED_BODY()
 	
@@ -31,4 +32,5 @@ protected:
 	//TObjectPtr<class UAnimMontage> ComboAttackMontage;
 
 protected:
+	virtual void SetupHUDWidget(UP4WHUDWidget* InHUDWidget) override;
 };

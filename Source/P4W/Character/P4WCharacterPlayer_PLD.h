@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Character/P4WCharacterBase.h"
+#include "Interface/P4WCharacterHUDInterface.h"
 #include "P4WCharacterPlayer_PLD.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class P4W_API AP4WCharacterPlayer_PLD : public AP4WCharacterBase
+class P4W_API AP4WCharacterPlayer_PLD : public AP4WCharacterBase, public IP4WCharacterHUDInterface
 {
 	GENERATED_BODY()
 	
@@ -33,4 +34,6 @@ protected:
 protected:
 	//UPROPERTY()
 	//int32 ComboNum;
+
+	virtual void SetupHUDWidget(UP4WHUDWidget* InHUDWidget) override;
 };
