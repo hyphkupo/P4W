@@ -3,11 +3,26 @@
 
 #include "CharacterStat/P4WCharacterStatComponent.h"
 #include "GameData/P4WGameSingleton.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
 UP4WCharacterStatComponent::UP4WCharacterStatComponent()
 {
 	CurrentJob = 1;
+
+	bWantsInitializeComponent = true;
+}
+
+void UP4WCharacterStatComponent::InitializeComponent()
+{
+	Super::InitializeComponent();
+
+	SetJobStat(CurrentJob);
+	ResetStat();
+
+	OnStatChanged.AddUObject(this, &UP4WCharacterStatComponent::SetNewMaxHp);
+
+	SetIsReplicated(true);
 }
 
 // Called when the game starts
@@ -21,7 +36,22 @@ void UP4WCharacterStatComponent::BeginPlay()
 	SetExp(0.0f);			// 이후 저장한 경험치 불러오기
 }
 
+void UP4WCharacterStatComponent::ReadyForReplication()
+{
+	Super::ReadyForReplication();
+}
+
 void UP4WCharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UP4WCharacterStatComponent, CurrentHp);
+	DOREPLIFETIME(UP4WCharacterStatComponent, MaxHp);
+	DOREPLIFETIME_CONDITION(UP4WCharacterStatComponent, BaseStat, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UP4WCharacterStatComponent, ModifierStat, COND_OwnerOnly);
+}
+
+void UP4WCharacterStatComponent::SetNewMaxHp(const FP4WCharacterStat& InBaseStat, const FP4WCharacterStat& InModifierStat)
 {
 }
 
@@ -132,4 +162,8 @@ void UP4WCharacterStatComponent::SetExp(float NewExp)
 		// @Todo: 레벨 업
 		// @Todo: Exp 0으로 초기화
 	}
+}
+
+void UP4WCharacterStatComponent::ResetStat()
+{
 }

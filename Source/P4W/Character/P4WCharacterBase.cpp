@@ -425,7 +425,7 @@ void AP4WCharacterBase::AutoAttack(const FInputActionValue& Value)
 	
 		//DisableInput(PlayerController);
 
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
 		FTimerHandle Handle;
 		GetWorld()->GetTimerManager().SetTimer(
@@ -433,7 +433,7 @@ void AP4WCharacterBase::AutoAttack(const FInputActionValue& Value)
 			FTimerDelegate::CreateLambda([&]()
 				{
 					//EnableInput(Cast<APlayerController>(GetController()));
-					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 					bCanAttack = true;
 				}
 			), 1.0f, false
@@ -511,15 +511,11 @@ void AP4WCharacterBase::Combo3Attack(const FInputActionValue& Value)
 	
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
 
-		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-		//UE_LOG(LogTemp, Log, TEXT("MovementMode: %s"), *Cast<FName>(GetCharacterMovement()->MovementMode()));
-
 		FTimerHandle Handle;
 		GetWorld()->GetTimerManager().SetTimer(
 			Handle,
 			FTimerDelegate::CreateLambda([&]()
 				{
-					//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 					bCanAttack = true;
 				}
 			), 1.7f, false
@@ -534,8 +530,20 @@ void AP4WCharacterBase::Combo3Attack(const FInputActionValue& Value)
 
 void AP4WCharacterBase::PlayAutoAttackAnimation()
 {
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->Montage_Play(AutoAttackMontage);
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+			}
+		), 1.0f, false
+	);
 }
 
 void AP4WCharacterBase::PlayComboAttackAnimation(int32 Num)

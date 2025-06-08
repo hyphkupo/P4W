@@ -25,10 +25,14 @@ public:
 	UP4WCharacterStatComponent();
 
 protected:
+	virtual void InitializeComponent() override;
+
+protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
+	virtual void ReadyForReplication() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	void SetNewMaxHp(const FP4WCharacterStat& InBaseStat, const FP4WCharacterStat& InModifierStat);
 
 	UFUNCTION()
 	void OnRep_CurrentHp();
@@ -65,12 +69,13 @@ public:
 
 	void SetJobStat(int32 InNewJob);
 	FORCEINLINE float GetCurrentJob() const { return CurrentJob; }
-	FORCEINLINE void SetModifierStat(const FP4WCharacterStat& InModifierStat) { ModifierStat = InModifierStat; }
+	FORCEINLINE void AddBaseStat(const FP4WCharacterStat& InAddBaseStat) { BaseStat = BaseStat + InAddBaseStat; OnStatChanged.Broadcast(GetBaseStat(), GetModifierStat()); }
+	FORCEINLINE void SetBaseStat(const FP4WCharacterStat& InBaseStat) { BaseStat = InBaseStat; OnStatChanged.Broadcast(GetBaseStat(), GetModifierStat()); }
+	FORCEINLINE void SetModifierStat(const FP4WCharacterStat& InModifierStat) { ModifierStat = InModifierStat; OnStatChanged.Broadcast(GetBaseStat(), GetModifierStat()); }
 
 	FORCEINLINE const FP4WCharacterStat& GetBaseStat() const { return BaseStat; }
 	FORCEINLINE const FP4WCharacterStat& GetModifierStat() const { return ModifierStat; }
 	FORCEINLINE FP4WCharacterStat GetTotalStat() const { return BaseStat + ModifierStat; }
-	float ApplyDamage(float InDamage);
 	
 	FORCEINLINE float GetCurrentHp() const { return CurrentHp; }
 	FORCEINLINE float GetMaxHp() const { return MaxHp; }
@@ -80,6 +85,10 @@ public:
 
 	FORCEINLINE float GetCurrentExp() const { return CurrentExp; }
 	FORCEINLINE float GetMaxExp() const { return MaxExp; }
+
+	FORCEINLINE void HealHp(float InHealAmount) { CurrentHp = FMath::Clamp(CurrentHp + InHealAmount, 0, GetTotalStat().MaxHp); OnHpChanged.Broadcast(CurrentHp, MaxHp); }
+
+	float ApplyDamage(float InDamage);
 
 protected:
 	//UPROPERTY()
@@ -126,4 +135,7 @@ public:
 	// 딱히 필요 없을 듯
 	UPROPERTY(ReplicatedUsing = OnRep_ModifierStat, Transient, VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
 	FP4WCharacterStat ModifierStat;
+
+public:
+	void ResetStat();
 };

@@ -33,42 +33,16 @@ void UP4WAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	//UE_LOG(LogTemp, Log, TEXT("Accel: %f"), Accel);
-
 	// 필요한 값 업데이트
 	if (Movement)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Velocity.X: %f, Y: %f, Z: %f"), Velocity.X, Velocity.Y, Velocity.Z);
 		Velocity = Movement->Velocity;
 		
-		//UE_LOG(LogTemp, Log, TEXT("Test PastZ: %f"), PastVelocity.Z);
-		//UE_LOG(LogTemp, Log, TEXT("Test Z: %f"), Velocity.Z);
-		//UE_LOG(LogTemp, Log, TEXT("Test Accel: %f"), Accel);
-
-		//if (Velocity.Z > 0)
-		//{
-		//	Accel = Velocity.Z - PastVelocity.Z;
-		//}
-		//else
-		//{
-		//	Accel = PastVelocity.Z - Velocity.Z;
-		//}
-
-		//UE_LOG(LogTemp, Log, TEXT("bIsJumpingPlace: %d"), bIsJumpingPlace);
-		//UE_LOG(LogTemp, Log, TEXT("bIsJumping: %d"), bIsJumping);
-		////UE_LOG(LogTemp, Log, TEXT("Current Animation: %s"), )
-		////UE_LOG(LogTemp, Log, TEXT("bIsFalling: %d"), bIsFalling);
-
-		//if (bIsJumpingPlace)
-		//{
-		//	UE_LOG(LogTemp, Log, TEXT("bIsJumpingPlace!"));
-		//}
-		
 		GroundSpeed = Velocity.Size2D();
 		bIsIdle = GroundSpeed < MovingThreshold;
 		bIsFalling = Movement->IsFalling();
 		bIsJumping = bIsFalling & (Velocity.Z > JumpingThreshold) & (Velocity.X > KINDA_SMALL_NUMBER) & (Velocity.Y > KINDA_SMALL_NUMBER);
 		bIsJumpingPlace = bIsFalling & (Velocity.Z > JumpingThreshold) & (Velocity.X == 0.0f) & (Velocity.Y == 0.0f);
-		//PastVelocity = Velocity;
 	}
 }

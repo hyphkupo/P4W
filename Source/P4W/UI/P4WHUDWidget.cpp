@@ -3,6 +3,7 @@
 
 #include "UI/P4WHUDWidget.h"
 #include "UI/P4WHpBarWidget.h"
+#include "UI/P4WCharacterStatWidget.h"
 #include "Interface/P4WCharacterWidgetInterface.h"
 #include "Interface/P4WCharacterHUDInterface.h"
 
@@ -27,7 +28,7 @@ void UP4WHUDWidget::UpdateExpBar(float NewCurrentExp, float NewMaxExp)
 void UP4WHUDWidget::UpdateStat(const FP4WCharacterStat& BaseStat, const FP4WCharacterStat& ModifierStat)
 {
 	FP4WCharacterStat TotalStat = BaseStat + ModifierStat;
-	//CharacterStat->UpdateStat(BaseStat, ModifierStat);
+	CharacterStat->UpdateStat(BaseStat, ModifierStat);
 }
 
 void UP4WHUDWidget::NativeConstruct()
@@ -36,6 +37,9 @@ void UP4WHUDWidget::NativeConstruct()
 
 	HpBar = Cast<UP4WHpBarWidget>(GetWidgetFromName(TEXT("WidgetHPBar")));
 	ensure(HpBar);
+
+	//CharacterStat = Cast<UP4WCharacterStatWidget>(GetWidgetFromName(TEXT("WidgetCharacterStat")));
+	//ensure(CharacterStat);
 
 	IP4WCharacterHUDInterface* HUDPawn = Cast<IP4WCharacterHUDInterface>(GetOwningPlayerPawn());
 	if (HUDPawn)

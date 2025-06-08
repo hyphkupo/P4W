@@ -38,6 +38,6 @@ protected:
 	UPROPERTY()
 	TObjectPtr<class UP4WExpBarWidget> ExpBar;
 
-	//UPROPERTY()
-	//TObjectPtr<class UP4WCharacterStatWidget> CharacterStat;
+	UPROPERTY()
+	TObjectPtr<class UP4WCharacterStatWidget> CharacterStat;
 };

@@ -15,6 +15,18 @@ AP4WPlayerController::AP4WPlayerController()
 	}
 }
 
+void AP4WPlayerController::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+}
+
+void AP4WPlayerController::PostNetInit()
+{
+	Super::PostNetInit();
+
+	UNetDriver* NetDriver = GetNetDriver();
+}
+
 void AP4WPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -22,12 +34,17 @@ void AP4WPlayerController::BeginPlay()
 	FInputModeGameOnly GameOnlyInputMode;
 	SetInputMode(GameOnlyInputMode);
 
-	P4WHUDWidget = CreateWidget<UP4WHUDWidget>(this, P4WHUDWidgetClass);
-	if (P4WHUDWidget)
-	{
-		SetupHUDWidget(P4WHUDWidget);
-		P4WHUDWidget->AddToViewport();
-	}
+	//P4WHUDWidget = CreateWidget<UP4WHUDWidget>(this, P4WHUDWidgetClass);
+	//if (P4WHUDWidget)
+	//{
+	//	SetupHUDWidget(P4WHUDWidget);
+	//	P4WHUDWidget->AddToViewport();
+	//}
+}
+
+void AP4WPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
 }
 
 void AP4WPlayerController::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
