@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "CharacterStat/P4WCharacterStatComponent.h"
 #include "P4WHUDWidget.generated.h"
 
 /**
@@ -22,7 +23,7 @@ public:
 	void UpdateHpBar(float NewCurrentHp, float NewMaxHp);
 	void UpdateMpBar(float NewCurrentMp, float NewMaxMp);
 	void UpdateExpBar(float NewCurrentExp, float NewMaxExp);
-	void UpdateStat(float BaseStat, float ModifierStat);
+	void UpdateStat(const FP4WCharacterStat& BaseStat, const FP4WCharacterStat& ModifierStat);
 
 protected:
 	virtual void NativeConstruct() override;
@@ -36,4 +37,7 @@ protected:
 	
 	UPROPERTY()
 	TObjectPtr<class UP4WExpBarWidget> ExpBar;
+
+	//UPROPERTY()
+	//TObjectPtr<class UP4WCharacterStatWidget> CharacterStat;
 };

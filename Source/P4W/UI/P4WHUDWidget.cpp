@@ -24,8 +24,10 @@ void UP4WHUDWidget::UpdateExpBar(float NewCurrentExp, float NewMaxExp)
 {
 }
 
-void UP4WHUDWidget::UpdateStat(float BaseStat, float ModifierStat)
+void UP4WHUDWidget::UpdateStat(const FP4WCharacterStat& BaseStat, const FP4WCharacterStat& ModifierStat)
 {
+	FP4WCharacterStat TotalStat = BaseStat + ModifierStat;
+	//CharacterStat->UpdateStat(BaseStat, ModifierStat);
 }
 
 void UP4WHUDWidget::NativeConstruct()

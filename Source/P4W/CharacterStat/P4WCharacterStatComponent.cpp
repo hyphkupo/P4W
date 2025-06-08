@@ -21,6 +21,61 @@ void UP4WCharacterStatComponent::BeginPlay()
 	SetExp(0.0f);			// 이후 저장한 경험치 불러오기
 }
 
+void UP4WCharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+}
+
+void UP4WCharacterStatComponent::OnRep_CurrentHp()
+{
+	OnHpChanged.Broadcast(CurrentHp, MaxHp);
+
+	if (CurrentHp <= KINDA_SMALL_NUMBER)
+	{
+		OnHpZero.Broadcast();
+	}
+}
+
+void UP4WCharacterStatComponent::OnRep_CurrentMp()
+{
+	OnMpChanged.Broadcast(CurrentMp, MaxMp);
+
+	if (CurrentMp <= KINDA_SMALL_NUMBER)
+	{
+		OnMpZero.Broadcast();
+	}
+}
+
+void UP4WCharacterStatComponent::OnRep_CurrentExp()
+{
+}
+
+void UP4WCharacterStatComponent::OnRep_MaxHp()
+{
+	OnHpChanged.Broadcast(CurrentHp, MaxHp);
+}
+
+void UP4WCharacterStatComponent::OnRep_MaxMp()
+{
+	OnMpChanged.Broadcast(CurrentMp, MaxMp);
+}
+
+void UP4WCharacterStatComponent::OnRep_MaxExp()
+{
+	//OnExpChanged.Broadcast(CurrentHp, MaxExp);
+}
+
+void UP4WCharacterStatComponent::OnRep_BaseStat()
+{
+	// 스탯 변경 이벤트 발행
+	OnStatChanged.Broadcast(BaseStat, ModifierStat);
+}
+
+void UP4WCharacterStatComponent::OnRep_ModifierStat()
+{
+	// 스탯 변경 이벤트 발행
+	OnStatChanged.Broadcast(BaseStat, ModifierStat);
+}
+
 void UP4WCharacterStatComponent::SetJobStat(int32 InNewJob)
 {
 	CurrentJob = FMath::Clamp(InNewJob, 1, UP4WGameSingleton::Get().CharacterMaxLevel);
@@ -50,7 +105,7 @@ void UP4WCharacterStatComponent::SetHp(float NewHp)
 		OnHpZero.Broadcast();
 	}
 
-	OnHpChanged.Broadcast(CurrentHp);
+	OnHpChanged.Broadcast(CurrentHp, BaseStat.MaxHp);
 }
 
 void UP4WCharacterStatComponent::SetMp(float NewMp)
@@ -65,7 +120,7 @@ void UP4WCharacterStatComponent::SetMp(float NewMp)
 		OnMpZero.Broadcast();
 	}
 
-	OnMpChanged.Broadcast(CurrentMp);
+	OnMpChanged.Broadcast(CurrentMp, BaseStat.MaxMp);
 }
 
 void UP4WCharacterStatComponent::SetExp(float NewExp)
@@ -77,19 +132,4 @@ void UP4WCharacterStatComponent::SetExp(float NewExp)
 		// @Todo: 레벨 업
 		// @Todo: Exp 0으로 초기화
 	}
-}
-
-float UP4WCharacterStatComponent::GetCurrentHp()
-{
-	return CurrentHp;
-}
-
-float UP4WCharacterStatComponent::GetCurrentMp()
-{
-	return CurrentMp;
-}
-
-float UP4WCharacterStatComponent::GetCurrentExp()
-{
-	return CurrentExp;
 }

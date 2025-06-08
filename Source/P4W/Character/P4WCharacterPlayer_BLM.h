@@ -14,4 +14,21 @@ class P4W_API AP4WCharacterPlayer_BLM : public AP4WCharacterBase
 {
 	GENERATED_BODY()
 	
+public:
+	AP4WCharacterPlayer_BLM();
+
+protected:
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+protected:
+	void Combo1Attack(const FInputActionValue& Value);
+	void Combo2Attack(const FInputActionValue& Value);
+	void Combo3Attack(const FInputActionValue& Value);
+
+	// Animation Montage
+protected:
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	//TObjectPtr<class UAnimMontage> ComboAttackMontage;
+
+protected:
 };

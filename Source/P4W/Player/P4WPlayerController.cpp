@@ -33,7 +33,6 @@ void AP4WPlayerController::BeginPlay()
 void AP4WPlayerController::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
 {
 
-	
 	//if (InHUDWidget)
 	//{
 	//	//InHUDWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());

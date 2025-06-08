@@ -10,8 +10,10 @@
 DECLARE_MULTICAST_DELEGATE(FOnHpZeroDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnMpZeroDelegate);
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHpChangedDelegate, float /*CurrentHp*/, float /*MaxHp*/);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnMpChangedDelegate, float /*CurrentMp*/, float /*MaxMp*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHpChangedDelegate, float /*CurrentHp*/, float /*MaxHp*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnMpChangedDelegate, float /*CurrentMp*/, float /*MaxMp*/);
+
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStatChangedDelegate, const FP4WCharacterStat& /*BaseStat*/, const FP4WCharacterStat& /*ModifierStat*/);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class P4W_API UP4WCharacterStatComponent : public UActorComponent
@@ -26,6 +28,32 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION()
+	void OnRep_CurrentHp();
+	
+	UFUNCTION()
+	void OnRep_CurrentMp();
+	
+	UFUNCTION()
+	void OnRep_CurrentExp();
+
+	UFUNCTION()
+	void OnRep_MaxHp();
+
+	UFUNCTION()
+	void OnRep_MaxMp();
+
+	UFUNCTION()
+	void OnRep_MaxExp();
+	
+	UFUNCTION()
+	void OnRep_BaseStat();
+	
+	UFUNCTION()
+	void OnRep_ModifierStat();
+
 public:
 	FOnHpZeroDelegate OnHpZero;
 	FOnMpZeroDelegate OnMpZero;
@@ -33,15 +61,25 @@ public:
 	FOnHpChangedDelegate OnHpChanged;
 	FOnMpChangedDelegate OnMpChanged;
 
+	FOnStatChangedDelegate OnStatChanged;
+
 	void SetJobStat(int32 InNewJob);
 	FORCEINLINE float GetCurrentJob() const { return CurrentJob; }
 	FORCEINLINE void SetModifierStat(const FP4WCharacterStat& InModifierStat) { ModifierStat = InModifierStat; }
+
+	FORCEINLINE const FP4WCharacterStat& GetBaseStat() const { return BaseStat; }
+	FORCEINLINE const FP4WCharacterStat& GetModifierStat() const { return ModifierStat; }
 	FORCEINLINE FP4WCharacterStat GetTotalStat() const { return BaseStat + ModifierStat; }
 	float ApplyDamage(float InDamage);
 	
-	float GetCurrentHp();
-	float GetCurrentMp();
-	float GetCurrentExp();
+	FORCEINLINE float GetCurrentHp() const { return CurrentHp; }
+	FORCEINLINE float GetMaxHp() const { return MaxHp; }
+
+	FORCEINLINE float GetCurrentMp() const { return CurrentMp; }
+	FORCEINLINE float GetMaxMp() const { return MaxMp; }
+
+	FORCEINLINE float GetCurrentExp() const { return CurrentExp; }
+	FORCEINLINE float GetMaxExp() const { return MaxExp; }
 
 protected:
 	//UPROPERTY()
@@ -61,22 +99,31 @@ protected:
 	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat)
 	float CurrentJob;
 	
-	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat)
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentHp, Transient, VisibleInstanceOnly, Category = Stat)
 	float CurrentHp;
 
-	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat)
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentMp, Transient, VisibleInstanceOnly, Category = Stat)
 	float CurrentMp;
 	
-	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat)
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentExp, Transient, VisibleInstanceOnly, Category = Stat)
 	float CurrentExp;
+
+	UPROPERTY(ReplicatedUsing = OnRep_MaxHp, Transient, VisibleInstanceOnly, Category = Stat)
+	float MaxHp;
+
+	UPROPERTY(ReplicatedUsing = OnRep_MaxMp, Transient, VisibleInstanceOnly, Category = Stat)
+	float MaxMp;
+
+	UPROPERTY(ReplicatedUsing = OnRep_MaxExp, Transient, VisibleInstanceOnly, Category = Stat)
+	float MaxExp;
 
 public:
 	// 캐릭터의 기본 스탯
-	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(ReplicatedUsing = OnRep_BaseStat, Transient, VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
 	FP4WCharacterStat BaseStat;
 	
 	// 무기, 장비, ... 등에 의해 추가되는 스탯
 	// 딱히 필요 없을 듯
-	UPROPERTY(Transient, VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(ReplicatedUsing = OnRep_ModifierStat, Transient, VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
 	FP4WCharacterStat ModifierStat;
 };

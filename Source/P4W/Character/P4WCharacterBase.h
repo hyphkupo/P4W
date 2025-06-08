@@ -139,7 +139,7 @@ protected:
 
 public:
 	// 공격 가능 여부 판정
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	uint8 bCanAttack : 1;
 
 	//// 이동 가능 여부 판정

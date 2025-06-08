@@ -256,9 +256,10 @@ void AP4WCharacterBase::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
 {
 	if (InHUDWidget)
 	{
-		//InHUDWidget->
-		InHUDWidget->UpdateHpBar(Stat->GetCurrentHp(), Stat->GetTotalStat().MaxHp);
-		//InHUDWidget->UpdateStat(Stat->, Stat->);
+		InHUDWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());
+		InHUDWidget->UpdateHpBar(Stat->GetCurrentHp(), Stat->GetMaxHp());
+
+		Stat->OnStatChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateStat);
 		Stat->OnHpChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateHpBar);
 	}
 }
@@ -267,6 +268,7 @@ void AP4WCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(AP4WCharacterBase, bCanAttack);
 	//DOREPLIFETIME(AP4WCharacterBase, ComboNum);
 }
 
@@ -292,7 +294,7 @@ void AP4WCharacterBase::ClientRPCComboAttack_Implementation(AP4WCharacterBase* C
 {
 	if (CharacterToPlay)
 	{
-		PlayComboAttackAnimation(ComboNum);
+		CharacterToPlay->PlayComboAttackAnimation(ComboNum);
 	}
 	//MulticastRPCAutoAttack();
 }
@@ -423,7 +425,6 @@ void AP4WCharacterBase::AutoAttack(const FInputActionValue& Value)
 	
 		//DisableInput(PlayerController);
 
-		PlayAutoAttackAnimation();
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
 		FTimerHandle Handle;
@@ -433,11 +434,12 @@ void AP4WCharacterBase::AutoAttack(const FInputActionValue& Value)
 				{
 					//EnableInput(Cast<APlayerController>(GetController()));
 					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					bCanAttack = true;
 				}
 			), 1.0f, false
 		);
+		PlayAutoAttackAnimation();
 
-		bCanAttack = true;
 		ServerRPCAutoAttack();
 	}
 }
@@ -452,7 +454,6 @@ void AP4WCharacterBase::Combo1Attack(const FInputActionValue& Value)
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
 		//DisableInput(PlayerController);
 
-		PlayComboAttackAnimation(ComboNum);
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
 		FTimerHandle Handle;
@@ -462,11 +463,12 @@ void AP4WCharacterBase::Combo1Attack(const FInputActionValue& Value)
 				{
 					//EnableInput(Cast<APlayerController>(GetController()));
 					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					bCanAttack = true;
 				}
 			), 1.0f, false
 		);
-
-		bCanAttack = true;
+		PlayComboAttackAnimation(ComboNum);
+		
 		ServerRPCComboAttack(ComboNum);
 	}
 }
@@ -481,7 +483,6 @@ void AP4WCharacterBase::Combo2Attack(const FInputActionValue& Value)
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
 		//DisableInput(PlayerController);
 
-		PlayComboAttackAnimation(ComboNum);
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
 		FTimerHandle Handle;
@@ -491,11 +492,12 @@ void AP4WCharacterBase::Combo2Attack(const FInputActionValue& Value)
 				{
 					//EnableInput(Cast<APlayerController>(GetController()));
 					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					bCanAttack = true;
 				}
 			), 1.0f, false
 		);
+		PlayComboAttackAnimation(ComboNum);
 		
-		bCanAttack = true;
 		ServerRPCComboAttack(ComboNum);
 	}
 }
@@ -509,20 +511,21 @@ void AP4WCharacterBase::Combo3Attack(const FInputActionValue& Value)
 	
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
 
-		PlayComboAttackAnimation(ComboNum);
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+		//UE_LOG(LogTemp, Log, TEXT("MovementMode: %s"), *Cast<FName>(GetCharacterMovement()->MovementMode()));
 
 		FTimerHandle Handle;
 		GetWorld()->GetTimerManager().SetTimer(
 			Handle,
 			FTimerDelegate::CreateLambda([&]()
 				{
-					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					bCanAttack = true;
 				}
 			), 1.7f, false
 		);
+		PlayComboAttackAnimation(ComboNum);
 
-		bCanAttack = true;
 		ServerRPCComboAttack(ComboNum);
 
 		//UE_LOG(LogTemp, Log, TEXT("[%s] ComboInput ComboNum: %d"), LOG_NETMODEINFO, ComboNum);
@@ -537,9 +540,35 @@ void AP4WCharacterBase::PlayAutoAttackAnimation()
 
 void AP4WCharacterBase::PlayComboAttackAnimation(int32 Num)
 {
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->Montage_Play(ComboAttackMontage);
-
+	
+	FTimerHandle Handle;
+	if (Num == 3)
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			Handle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+				}
+			), 1.7f, false
+		);
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			Handle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+				}
+			), 1.0f, false
+		);
+	}
+	
 	UE_LOG(LogTemp, Log, TEXT("[%s] AttackAnimation ComboNum: %d"), LOG_NETMODEINFO, Num);
 	FName ComboNumber = *FString::Printf(TEXT("ComboAttack%d"), Num);
 	AnimInstance->Montage_JumpToSection(ComboNumber, ComboAttackMontage);
