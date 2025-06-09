@@ -28,6 +28,9 @@
 #include "UI/P4WHpBarWidget.h"
 #include "UI/P4WMpBarWidget.h"
 
+#include "Physics/P4WCollision.h"
+#include "Engine/DamageEvents.h"
+
 //#include "GameFramework/PlayerStart.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -104,6 +107,18 @@ AP4WCharacterBase::AP4WCharacterBase()
 		Combo3AttackAction = Combo3AttackActionRef.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> RAttackActionRef(TEXT("/Game/Input/IA_RAttack.IA_RAttack"));
+	if (RAttackActionRef.Object)
+	{
+		RAttackAction = RAttackActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> FAttackActionRef(TEXT("/Game/Input/IA_FAttack.IA_FAttack"));
+	if (FAttackActionRef.Object)
+	{
+		FAttackAction = FAttackActionRef.Object;
+	}
+
 	// Animation
 	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstanceRef(TEXT("/Game/Animation/ABP_P4WCharacter1.ABP_P4WCharacter1_C"));
 	if (AnimInstanceRef.Class)
@@ -125,9 +140,11 @@ AP4WCharacterBase::AP4WCharacterBase()
 
 	GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -27.5f));
+	GetMesh()->SetCollisionProfileName(TEXT("NoCollision"));
 
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(25.0f, 25.0f);
+	GetCapsuleComponent()->SetCollisionProfileName(CPROFILE_P4WCAPSULE);
 		
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -167,7 +184,7 @@ AP4WCharacterBase::AP4WCharacterBase()
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->TargetArmLength = 400.0f;
 	SpringArm->bUsePawnControlRotation = true;
-	SpringArm->SetupAttachment(RootComponent);
+	SpringArm->SetupAttachment(GetCapsuleComponent());
 	SpringArm->SocketOffset = FVector(0.0f, 0.0f, 90.0f);
 	//SpringArm->TargetOffset = FVector(0.0f, 0.0f, 90.0f);
 	//SpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 90.0f));
@@ -598,6 +615,48 @@ void AP4WCharacterBase::PlayComboAttackAnimation(int32 Num)
 	UE_LOG(LogTemp, Log, TEXT("[%s] AttackAnimation ComboNum: %d"), LOG_NETMODEINFO, Num);
 	FName ComboNumber = *FString::Printf(TEXT("ComboAttack%d"), Num);
 	AnimInstance->Montage_JumpToSection(ComboNumber, ComboAttackMontage);
+}
+
+void AP4WCharacterBase::AttackHitCheck()
+{
+	FHitResult OutHitResult;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
+
+	const float AttackRange = Stat->GetTotalStat().AttackRange;
+	const float AttackRadius = Stat->GetAttackRadius();
+	const float AttackDamage = Stat->GetTotalStat().Attack;
+	const FVector Start = GetActorLocation() + GetActorForwardVector() * GetCapsuleComponent()->GetScaledCapsuleRadius();
+	const FVector End = Start + GetActorForwardVector() * AttackRange;
+
+	bool HitDetected = GetWorld()->SweepSingleByChannel(OutHitResult, Start, End, FQuat::Identity, CCHANNEL_P4WACTION, FCollisionShape::MakeSphere(AttackRadius), Params);
+	UE_LOG(LogTemp, Log, TEXT("AttackHitCheck"));
+
+	if (HitDetected)
+	{
+		UE_LOG(LogTemp, Log, TEXT("HitDetected"));
+		FDamageEvent DamageEvent;
+		OutHitResult.GetActor()->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
+	}
+
+#if ENABLE_DRAW_DEBUG
+
+	FVector CapsuleOrigin = Start + (End - Start) * 0.5f;
+	float CapsuleHalfHeight = AttackRange * 0.5f;
+	FColor DrawColor = HitDetected ? FColor::Green : FColor::Red;
+
+	DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(GetActorForwardVector()).ToQuat(), DrawColor, false, 5.0f);
+
+#endif
+
+}
+
+float AP4WCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
+	Stat->ApplyDamage(DamageAmount);
+	
+	return DamageAmount;
 }
 
 //DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All)

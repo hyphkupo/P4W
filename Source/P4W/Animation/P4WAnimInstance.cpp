@@ -36,7 +36,7 @@ void UP4WAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// 필요한 값 업데이트
 	if (Movement)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Velocity.X: %f, Y: %f, Z: %f"), Velocity.X, Velocity.Y, Velocity.Z);
+		//UE_LOG(LogTemp, Log, TEXT("Velocity.X: %f, Y: %f, Z: %f"), Velocity.X, Velocity.Y, Velocity.Z);
 		Velocity = Movement->Velocity;
 		
 		GroundSpeed = Velocity.Size2D();

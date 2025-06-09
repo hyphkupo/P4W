@@ -8,6 +8,7 @@
 #include "UI/P4WHUDWidget.h"
 #include "UI/P4WUserWidget.h"
 #include "Interface/P4WCharacterWidgetInterface.h"
+#include "Interface/P4WAnimationAttackInterface.h"
 #include "P4WCharacterBase.generated.h"
 
 class USpringArmComponent;
@@ -19,7 +20,7 @@ struct FInputActionValue;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class AP4WCharacterBase : public ACharacter, public IP4WCharacterWidgetInterface
+class AP4WCharacterBase : public ACharacter, public IP4WCharacterWidgetInterface, public IP4WAnimationAttackInterface
 {
 	GENERATED_BODY()
 
@@ -62,6 +63,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> Combo3AttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> RAttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> FAttackAction;
 
 protected:
 // Called for input
@@ -170,5 +177,10 @@ protected:
 	TObjectPtr<class UWidgetComponent> HpBar;
 
 	virtual void SetupCharacterWidget(UP4WUserWidget* InUserWidget) override;
+
+// Attack Hit Section
+protected:
+	virtual void AttackHitCheck() override;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 };

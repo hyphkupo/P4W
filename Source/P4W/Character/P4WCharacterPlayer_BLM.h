@@ -22,11 +22,14 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
-	void Combo1Attack(const FInputActionValue& Value);
-	void Combo2Attack(const FInputActionValue& Value);
-	void Combo3Attack(const FInputActionValue& Value);
+	// skill
+	void BlizzardAttack(const FInputActionValue& Value);
+	void FireAttack(const FInputActionValue& Value);
+	void ThunderAttack(const FInputActionValue& Value);
+	void FireBallAttack(const FInputActionValue& Value);
+	void LeyLines(const FInputActionValue& Value);
 
-	// Animation Montage
+// Animation Montage
 protected:
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	//TObjectPtr<class UAnimMontage> ComboAttackMontage;

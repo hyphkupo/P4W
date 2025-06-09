@@ -33,6 +33,7 @@ protected:
 	virtual void ReadyForReplication() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	void SetNewMaxHp(const FP4WCharacterStat& InBaseStat, const FP4WCharacterStat& InModifierStat);
+	void SetNewMaxMp(const FP4WCharacterStat& InBaseStat, const FP4WCharacterStat& InModifierStat);
 
 	UFUNCTION()
 	void OnRep_CurrentHp();
@@ -73,6 +74,8 @@ public:
 	FORCEINLINE void SetBaseStat(const FP4WCharacterStat& InBaseStat) { BaseStat = InBaseStat; OnStatChanged.Broadcast(GetBaseStat(), GetModifierStat()); }
 	FORCEINLINE void SetModifierStat(const FP4WCharacterStat& InModifierStat) { ModifierStat = InModifierStat; OnStatChanged.Broadcast(GetBaseStat(), GetModifierStat()); }
 
+	FORCEINLINE void SetDamage(float ModifierDamage) { BaseStat.Attack = ModifierDamage; OnStatChanged.Broadcast(GetBaseStat(), GetModifierStat()); }
+
 	FORCEINLINE const FP4WCharacterStat& GetBaseStat() const { return BaseStat; }
 	FORCEINLINE const FP4WCharacterStat& GetModifierStat() const { return ModifierStat; }
 	FORCEINLINE FP4WCharacterStat GetTotalStat() const { return BaseStat + ModifierStat; }
@@ -87,6 +90,8 @@ public:
 	FORCEINLINE float GetMaxExp() const { return MaxExp; }
 
 	FORCEINLINE void HealHp(float InHealAmount) { CurrentHp = FMath::Clamp(CurrentHp + InHealAmount, 0, GetTotalStat().MaxHp); OnHpChanged.Broadcast(CurrentHp, MaxHp); }
+
+	FORCEINLINE float GetAttackRadius() const { return AttackRadius; }
 
 	float ApplyDamage(float InDamage);
 
@@ -134,6 +139,9 @@ protected:
 	// 딱히 필요 없을 듯
 	UPROPERTY(ReplicatedUsing = OnRep_ModifierStat, Transient, VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
 	FP4WCharacterStat ModifierStat;
+
+	UPROPERTY(VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
+	float AttackRadius;
 
 public:
 	void ResetStat();

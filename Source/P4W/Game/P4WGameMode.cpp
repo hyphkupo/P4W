@@ -11,6 +11,25 @@
 AP4WGameMode::AP4WGameMode()
 {
 	// set default pawn class to our Blueprinted character
+	//rannum = FMath::RandRange(0, 2);
+
+	//if (rannum == 0)
+	//{
+	//	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PLDPlayer.BP_PLDPlayer_C"));
+	//	if (PlayerPawnBPClass.Class != NULL)
+	//	{
+	//		DefaultPawnClass = PlayerPawnBPClass.Class;
+	//	}
+	//}
+	//else
+	//{
+	//	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_BLMPlayer.BP_BLMPlayer_C"));
+	//	if (PlayerPawnBPClass.Class != NULL)
+	//	{
+	//		DefaultPawnClass = PlayerPawnBPClass.Class;
+	//	}
+	//}
+
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PLDPlayer.BP_PLDPlayer_C"));
 	if (PlayerPawnBPClass.Class != NULL)
 	{
@@ -22,6 +41,18 @@ AP4WGameMode::AP4WGameMode()
 	{
 		PlayerControllerClass = PlayerControllerBPClass.Class;
 	}
+}
+
+void AP4WGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage);
+}
+
+void AP4WGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	rannum = FMath::RandRange(0, 2);
 }
 
 void AP4WGameMode::RestartPlayerAtTransform(AController* NewPlayer, const FTransform& SpawnTransform)

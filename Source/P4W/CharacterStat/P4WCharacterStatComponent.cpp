@@ -9,6 +9,7 @@
 UP4WCharacterStatComponent::UP4WCharacterStatComponent()
 {
 	CurrentLevel = 1;
+	AttackRadius = 25.0f;
 
 	bWantsInitializeComponent = true;
 }
@@ -21,6 +22,7 @@ void UP4WCharacterStatComponent::InitializeComponent()
 	ResetStat();
 
 	OnStatChanged.AddUObject(this, &UP4WCharacterStatComponent::SetNewMaxHp);
+	OnStatChanged.AddUObject(this, &UP4WCharacterStatComponent::SetNewMaxMp);
 
 	SetIsReplicated(true);
 }
@@ -30,10 +32,9 @@ void UP4WCharacterStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetLevelStat(CurrentLevel);
-	SetHp(BaseStat.MaxHp);
-	SetMp(BaseStat.MaxMp);
-	SetExp(0.0f);			// 이후 저장한 경험치 불러오기
+	//SetHp(BaseStat.MaxHp);
+	//SetMp(BaseStat.MaxMp);
+	//SetExp(0.0f);			// 이후 저장한 경험치 불러오기
 }
 
 void UP4WCharacterStatComponent::ReadyForReplication()
@@ -58,6 +59,16 @@ void UP4WCharacterStatComponent::SetNewMaxHp(const FP4WCharacterStat& InBaseStat
 	if (PrevMaxHp != MaxHp)
 	{
 		OnHpChanged.Broadcast(CurrentHp, MaxHp);
+	}
+}
+
+void UP4WCharacterStatComponent::SetNewMaxMp(const FP4WCharacterStat& InBaseStat, const FP4WCharacterStat& InModifierStat)
+{
+	float PrevMaxMp = MaxMp;
+	MaxMp = GetTotalStat().MaxMp;
+	if (PrevMaxMp != MaxMp)
+	{
+		OnHpChanged.Broadcast(CurrentMp, MaxMp);
 	}
 }
 
@@ -117,6 +128,7 @@ void UP4WCharacterStatComponent::SetLevelStat(int32 InNewLevel)
 	CurrentLevel = FMath::Clamp(InNewLevel, 1, UP4WGameSingleton::Get().CharacterMaxLevel);
 	BaseStat = UP4WGameSingleton::Get().GetCharacterStat(CurrentLevel);
 	check(BaseStat.MaxHp > 0.0f);
+	check(BaseStat.MaxMp > 0.0f);
 }
 
 float UP4WCharacterStatComponent::ApplyDamage(float InDamage)
@@ -177,6 +189,6 @@ void UP4WCharacterStatComponent::ResetStat()
 	MaxMp = BaseStat.MaxMp;
 	MaxExp = BaseStat.MaxExp;
 	SetHp(MaxHp);
-	SetHp(MaxMp);
-	SetHp(MaxExp);
+	SetMp(MaxMp);
+	SetExp(MaxExp);
 }

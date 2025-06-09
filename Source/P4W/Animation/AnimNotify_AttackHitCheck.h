@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
-#include "AnimNotify_AutoAttackEnd.generated.h"
+#include "AnimNotify_AttackHitCheck.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class P4W_API UAnimNotify_AutoAttackEnd : public UAnimNotify
+class P4W_API UAnimNotify_AttackHitCheck : public UAnimNotify
 {
 	GENERATED_BODY()
 

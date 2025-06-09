@@ -26,6 +26,13 @@ protected:
 	void Combo2Attack(const FInputActionValue& Value);
 	void Combo3Attack(const FInputActionValue& Value);
 
+	void HealUp(const FInputActionValue& Value);
+	// Reduces damage taken
+	void Sheltron(const FInputActionValue& Value);
+
+	// placing yourself at the top of a target's enmity list while gaining additional enmity.
+	void Provoke(const FInputActionValue& Value);
+
 // Animation Montage
 protected:
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
@@ -36,4 +43,11 @@ protected:
 	//int32 ComboNum;
 
 	virtual void SetupHUDWidget(UP4WHUDWidget* InHUDWidget) override;
+
+protected:
+	virtual void AttackHitCheck() override;
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+public:
+	float CooldownTime;
 };
