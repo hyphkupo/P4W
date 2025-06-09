@@ -38,6 +38,19 @@ protected:
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	//TObjectPtr<class UAnimMontage> ComboAttackMontage;
 
+	// 클라이언트에서 액터가 맞았을 때 서버로 판정을 보내는 함수.
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerRPCNotifyHit(const FHitResult& HitResult, float HitCheckTime);
+
+	// 클라이언트에서 충돌 판정 후 미스가 발생했을 때 보내는 함수.
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerRPCNotifyMiss(
+		FVector_NetQuantize TraceStart,
+		FVector_NetQuantize TraceEnd,
+		FVector_NetQuantizeNormal TraceDir,
+		float HitCheckTime
+	);
+
 protected:
 	//UPROPERTY()
 	//int32 ComboNum;

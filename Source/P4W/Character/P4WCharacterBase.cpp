@@ -553,7 +553,7 @@ void AP4WCharacterBase::Combo3Attack(const FInputActionValue& Value)
 				{
 					bCanAttack = true;
 				}
-			), 1.7f, false
+			), 1.8f, false
 		);
 		PlayComboAttackAnimation(ComboNum);
 
