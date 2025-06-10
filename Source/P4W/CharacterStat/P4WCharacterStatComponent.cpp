@@ -27,6 +27,58 @@ void UP4WCharacterStatComponent::InitializeComponent()
 	SetIsReplicated(true);
 }
 
+float UP4WCharacterStatComponent::ApplyDamage(float InDamage)
+{
+	const float PrevHp = CurrentHp;
+	const float ActualDamage = FMath::Clamp<float>(InDamage, 0, InDamage);
+	UE_LOG(LogTemp, Log, TEXT("ActualDamage: %f"), ActualDamage);
+
+	SetHp(PrevHp - ActualDamage);
+
+	return ActualDamage;
+}
+
+void UP4WCharacterStatComponent::SetHp(float NewHp)
+{
+	CurrentHp = FMath::Clamp(NewHp, 0.0f, BaseStat.MaxHp);
+
+	if (CurrentHp < KINDA_SMALL_NUMBER)
+	{
+		//CurrentHp = 0.0f;
+
+		// 죽었다는 신호 전송
+		OnHpZero.Broadcast();
+	}
+
+	OnHpChanged.Broadcast(CurrentHp, BaseStat.MaxHp);
+}
+
+void UP4WCharacterStatComponent::SetMp(float NewMp)
+{
+	CurrentMp = FMath::Clamp(NewMp, 0.0f, BaseStat.MaxMp);
+
+	if (CurrentMp < KINDA_SMALL_NUMBER)
+	{
+		//CurrentHp = 0.0f;
+
+		// 죽었다는 신호 전송
+		OnMpZero.Broadcast();
+	}
+
+	OnMpChanged.Broadcast(CurrentMp, BaseStat.MaxMp);
+}
+
+void UP4WCharacterStatComponent::SetExp(float NewExp)
+{
+	CurrentExp = FMath::Clamp(NewExp, 0.0f, BaseStat.MaxExp);
+
+	if (CurrentExp == BaseStat.MaxExp)
+	{
+		// @Todo: 레벨 업
+		// @Todo: Exp 0으로 초기화
+	}
+}
+
 // Called when the game starts
 void UP4WCharacterStatComponent::BeginPlay()
 {
@@ -129,57 +181,6 @@ void UP4WCharacterStatComponent::SetLevelStat(int32 InNewLevel)
 	BaseStat = UP4WGameSingleton::Get().GetCharacterStat(CurrentLevel);
 	check(BaseStat.MaxHp > 0.0f);
 	check(BaseStat.MaxMp > 0.0f);
-}
-
-float UP4WCharacterStatComponent::ApplyDamage(float InDamage)
-{
-	const float PrevHp = CurrentHp;
-	const float ActualDamage = FMath::Clamp<float>(InDamage, 0, InDamage);
-
-	SetHp(PrevHp - ActualDamage);
-
-	return ActualDamage;
-}
-
-void UP4WCharacterStatComponent::SetHp(float NewHp)
-{
-	CurrentHp = FMath::Clamp(NewHp, 0.0f, BaseStat.MaxHp);
-
-	if (CurrentHp < KINDA_SMALL_NUMBER)
-	{
-		//CurrentHp = 0.0f;
-
-		// 죽었다는 신호 전송
-		OnHpZero.Broadcast();
-	}
-
-	OnHpChanged.Broadcast(CurrentHp, BaseStat.MaxHp);
-}
-
-void UP4WCharacterStatComponent::SetMp(float NewMp)
-{
-	CurrentMp = FMath::Clamp(NewMp, 0.0f, BaseStat.MaxMp);
-
-	if (CurrentMp < KINDA_SMALL_NUMBER)
-	{
-		//CurrentHp = 0.0f;
-
-		// 죽었다는 신호 전송
-		OnMpZero.Broadcast();
-	}
-
-	OnMpChanged.Broadcast(CurrentMp, BaseStat.MaxMp);
-}
-
-void UP4WCharacterStatComponent::SetExp(float NewExp)
-{
-	CurrentExp = FMath::Clamp(NewExp, 0.0f, BaseStat.MaxExp);
-
-	if (CurrentExp == BaseStat.MaxExp)
-	{
-		// @Todo: 레벨 업
-		// @Todo: Exp 0으로 초기화
-	}
 }
 
 void UP4WCharacterStatComponent::ResetStat()

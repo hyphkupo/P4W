@@ -16,5 +16,4 @@ void UAnimNotify_AttackHitCheck::Notify(USkeletalMeshComponent* MeshComp, UAnimS
 			AttackPawn->AttackHitCheck();
 		}
 	}
-
 }

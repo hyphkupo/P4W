@@ -7,7 +7,28 @@
 #include "Interface/P4WAnimationAttackInterface.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/GameStateBase.h"
+#include "Net/UnrealNetwork.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
+#include "EngineUtils.h"
+#include "P4W.h"
+
+#include "UI/P4WUserWidget.h"
+#include "UI/P4WHpBarWidget.h"
+#include "UI/P4WMpBarWidget.h"
+
+#include "Physics/P4WCollision.h"
+#include "Engine/DamageEvents.h"
+#include "Skill/SkillSystemComponent.h"
+
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputActionValue.h"
+#include "InputMappingContext.h"
+#include "GameFramework/PlayerController.h"
+
+#include "Character/P4WPLDComboActionData.h"
+#include "GameFramework/Character.h"
 
 AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 {
@@ -18,11 +39,91 @@ AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 	{
 		ComboAttackMontage = ComboAttackMontageRef.Object;
 	}
+
+	// Attack Input
+	static ConstructorHelpers::FObjectFinder<UInputAction> AutoAttackActionRef(TEXT("/Game/Input/IA_AutoAttack.IA_AutoAttack"));
+	if (AutoAttackActionRef.Object)
+	{
+		AutoAttackAction = AutoAttackActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Combo1AttackActionRef(TEXT("/Game/Input/IA_Combo1Attack.IA_Combo1Attack"));
+	if (Combo1AttackActionRef.Object)
+	{
+		Combo1AttackAction = Combo1AttackActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Combo2AttackActionRef(TEXT("/Game/Input/IA_Combo2Attack.IA_Combo2Attack"));
+	if (Combo2AttackActionRef.Object)
+	{
+		Combo2AttackAction = Combo2AttackActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Combo3AttackActionRef(TEXT("/Game/Input/IA_Combo3Attack.IA_Combo3Attack"));
+	if (Combo3AttackActionRef.Object)
+	{
+		Combo3AttackAction = Combo3AttackActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> RAttackActionRef(TEXT("/Game/Input/IA_RAttack.IA_RAttack"));
+	if (RAttackActionRef.Object)
+	{
+		RAttackAction = RAttackActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> FAttackActionRef(TEXT("/Game/Input/IA_FAttack.IA_FAttack"));
+	if (FAttackActionRef.Object)
+	{
+		FAttackAction = FAttackActionRef.Object;
+	}
+
+	bReplicates = true;
+	bIsInCombo = false;
+
 }
 
 void AP4WCharacterPlayer_PLD::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
+
+	// Attack Section
+	// Auto Attack
+	EnhancedInputComponent->BindAction(AutoAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::AutoAttack);
+
+	EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Combo1Attack);
+	EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Combo2Attack);
+	EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Combo3Attack);
+}
+
+void AP4WCharacterPlayer_PLD::AutoAttack(const FInputActionValue& Value)
+{
+	if (bCanAttack)
+	{
+		bCanAttack = false;
+
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+
+		//DisableInput(PlayerController);
+
+		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(
+			Handle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					//EnableInput(Cast<APlayerController>(GetController()));
+					//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					bCanAttack = true;
+				}
+			), 1.0f, false
+		);
+		PlayAutoAttackAnimation();
+
+		ServerRPCAutoAttack();
+	}
 }
 
 // Cast: Instant, Cooldown time: 2.5s, MP Cost: 0MP, Range: 3y, Radius: 0y
@@ -32,7 +133,50 @@ void AP4WCharacterPlayer_PLD::Combo1Attack(const FInputActionValue& Value)
 	if (bCanAttack)
 	{
 		CooldownTime = 2.5f;
-		Stat->SetDamage(220);
+	}
+
+	if (bCanAttack)
+	{
+		bCanNextCombo1 = true;
+		bCanAttack = false;
+		bIsInCombo = true;
+
+		ComboNum = 1;
+
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		//DisableInput(PlayerController);
+
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(
+			Handle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					//EnableInput(Cast<APlayerController>(GetController()));
+					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					bCanAttack = true;
+					bIsInCombo = false;
+					PrevComboNum = 1;
+				}
+			), 1.0f, false
+		);
+
+		FTimerHandle ComboHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			ComboHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanNextCombo1 = false;
+				}
+			), 2.0f, false
+		);
+
+		CurrentDamage = 22.0f;
+
+		PlayComboAttackAnimation(ComboNum);
+
+		ServerRPCComboAttack(ComboNum);
 	}
 }
 
@@ -45,6 +189,56 @@ void AP4WCharacterPlayer_PLD::Combo2Attack(const FInputActionValue& Value)
 		CooldownTime = 2.5f;
 	}
 
+	if (bCanAttack)
+	{
+		bCanNextCombo2 = true;
+		bCanAttack = false;
+		bIsInCombo = true;
+
+		ComboNum = 2;
+
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		//DisableInput(PlayerController);
+
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(
+			Handle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					//EnableInput(Cast<APlayerController>(GetController()));
+					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+					bCanAttack = true;
+					bIsInCombo = false;
+					PrevComboNum = 2;
+				}
+			), 1.0f, false
+		);
+
+		FTimerHandle ComboHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			ComboHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanNextCombo2 = false;
+				}
+			), 2.0f, false
+		);
+
+		if (PrevComboNum == 1 && bCanNextCombo1)
+		{
+			CurrentDamage = 33.0f;
+		}
+		else
+		{
+			CurrentDamage = 17.0f;
+		}
+
+		PlayComboAttackAnimation(ComboNum);
+
+		ServerRPCComboAttack(ComboNum);
+	}
 }
 
 // Cast: Instant, Cooldown time: 2.5s, MP Cost: 0MP, Range: 3y, Radius: 0y
@@ -54,7 +248,48 @@ void AP4WCharacterPlayer_PLD::Combo3Attack(const FInputActionValue& Value)
 	if (bCanAttack)
 	{
 		CooldownTime = 2.5f;
+	}
 
+	if (bCanAttack)
+	{
+		bCanAttack = false;
+		bIsInCombo = true;
+
+		ComboNum = 3;
+		//float PrevDamage = Stat->GetTotalStat().Attack;
+		//Stat->SetDamage(220.0f);
+		//UE_LOG(LogTemp, Log, TEXT("Combo3Attack | Damage:%f"), Stat->GetTotalStat().Attack);
+
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(
+			Handle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanAttack = true;
+					bIsInCombo = false;
+					PrevComboNum = 3;
+				}
+			), 1.8f, false
+		);
+
+		if (PrevComboNum == 2 && bCanNextCombo2)
+		{
+			CurrentDamage = 35.0f;
+		}
+		else
+		{
+			CurrentDamage = 10.0f;
+		}
+
+		PlayComboAttackAnimation(ComboNum);
+		ServerRPCComboAttack(ComboNum);
+
+		UE_LOG(LogTemp, Log, TEXT("Combo3Attack | Damage:%f"), Stat->GetTotalStat().Attack);
+		//Stat->SetDamage(PrevDamage);
+
+		//UE_LOG(LogTemp, Log, TEXT("[%s] ComboInput ComboNum: %d"), LOG_NETMODEINFO, ComboNum);
 	}
 
 }
@@ -66,7 +301,6 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 	if (bCanAttack)
 	{
 		CooldownTime = 2.5f;
-
 	}
 
 }
@@ -103,32 +337,43 @@ bool AP4WCharacterPlayer_PLD::ServerRPCNotifyHit_Validate(const FHitResult& HitR
 
 void AP4WCharacterPlayer_PLD::ServerRPCNotifyHit_Implementation(const FHitResult& HitResult, float HitCheckTime)
 {
-//	AActor* HitActor = HitResult.GetActor();
-//	if (::IsValid(HitActor))
-//	{
-//		const FVector HitLocation = HitResult.Location;
-//		const FBox HitBox = HitActor->GetComponentsBoundingBox();
-//		const FVector ActorBoxCenter = (HitBox.Min + HitBox.Max) * 0.5f;
-//		if (FVector::DistSquared(HitLocation, ActorBoxCenter) <= AttackCheckDistance * AttackCheckDistance)
-//		{
-//			AttackHitConfirm(HitActor);
-//		}
-//		else
-//		{
-//			AB_LOG(LogABNetwork, Warning, TEXT("%s"), TEXT("HitTest Rejected!"));
-//		}
-//
-//#if ENABLE_DRAW_DEBUG
-//		// 맞은 액터의 위치를 하늘색으로 표시 (점으로).
-//		DrawDebugPoint(GetWorld(), ActorBoxCenter, 30.0f, FColor::Cyan, false, 5.0f);
-//
-//		// 맞은 액터의 위치를 자홍색으로 표시 (점으로).
-//		DrawDebugPoint(GetWorld(), HitLocation, 30.0f, FColor::Magenta, false, 5.0f);
-//
-//#endif
-//		// 디버그 드로우로 공격 영역 보여주기.
-//		DrawDebugAttackRange(FColor::Green, HitResult.TraceStart, HitResult.TraceEnd, HitActor->GetActorForwardVector());
-//	}
+	UE_LOG(LogTemp, Log, TEXT("[%s]CurrentDamage: %f"), LOG_NETMODEINFO, CurrentDamage);
+	AActor* HitActor = HitResult.GetActor();
+	if (::IsValid(HitActor))
+	{
+		const FVector HitLocation = HitResult.Location;
+		const FBox HitBox = HitActor->GetComponentsBoundingBox();
+		const FVector ActorBoxCenter = (HitBox.Min + HitBox.Max) * 0.5f;
+		if (FVector::DistSquared(HitLocation, ActorBoxCenter) <= AcceptCheckDistance * AcceptCheckDistance)
+		{
+			if (HasAuthority())
+			{
+				float AttackDamage;
+				if (bIsInCombo)
+				{
+					AttackDamage = CurrentDamage;
+				}
+				else
+				{
+					AttackDamage = Stat->GetTotalStat().Attack;
+				}
+				FDamageEvent DamageEvent;
+				HitActor->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
+				UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), AttackDamage);
+
+			}
+		}
+		else
+		{
+		}
+
+#if ENABLE_DRAW_DEBUG
+		//DrawDebugPoint(GetWorld(), ActorBoxCenter, 50.0f, FColor::Cyan, false, 5.0f);
+		//DrawDebugPoint(GetWorld(), HitLocation, 50.0f, FColor::Magenta, false, 5.0f);
+#endif
+
+		DrawDebugAttackRange(FColor::Green, HitResult.TraceStart, HitResult.TraceEnd, HitActor->GetActorForwardVector());
+	}
 }
 
 bool AP4WCharacterPlayer_PLD::ServerRPCNotifyMiss_Validate(FVector_NetQuantize TraceStart, FVector_NetQuantize TraceEnd, FVector_NetQuantizeNormal TraceDir, float HitCheckTime)
@@ -156,129 +401,190 @@ void AP4WCharacterPlayer_PLD::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
 
 void AP4WCharacterPlayer_PLD::AttackHitCheck()
 {
-	Super::AttackHitCheck();
+	if (IsLocallyControlled())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[%s]CurrentDamage: %f"), LOG_NETMODEINFO, CurrentDamage);
 
-//	// 지금 소유권을 가진 클라이언트에서 판정을 진행
-//	if (IsLocallyControlled())
-//	{
-//		// 충돌했는지 판정
-//		FHitResult OutHitResult;
-//		FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
-//
-//		const float AttackRange = Stat->GetTotalStat().AttackRange;
-//		const float AttackRadius = Stat->GetAttackRadius();
-//		const float AttackDamage = Stat->GetTotalStat().Attack;
-//		const FVector Forward = GetActorForwardVector();
-//		const FVector Start = GetActorLocation() + Forward * GetCapsuleComponent()->GetScaledCapsuleRadius();
-//		const FVector End = Start + Forward * AttackRange;
-//
-//		bool HitDetected = GetWorld()->SweepSingleByChannel(
-//			OutHitResult,
-//			Start,
-//			End,
-//			FQuat::Identity,
-//			CCHANNEL_P4WACTION,
-//			FCollisionShape::MakeSphere(AttackRadius),
-//			Params
-//		);
-//
-//		// 공격 판정 타이밍
-//		//float HitCheckTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
-//
-//		// 클라이언트에서 진행
-//		// 클라이언트에서 판정을 진행하는 경우에는 다시 서버 쪽에 패킷을 보내서 내가 판정한 결과에 대한 검증을 받아야 함
-//		if (!HasAuthority())
-//		{
-//			// 서버의 시간을 가져와서 인자로 넘길 것
-//			float HitCheckTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
-//			// 판정을 위해서 서버로 보낼 RPC를 헤더 파일에 선언
-//
-//			if (HitDetected)
-//			{
-//				ServerRPCNotifyHit(OutHitResult, HitCheckTime);
-//			}
-//			else
-//			{
-//				ServerRPCNotifyMiss(Start, End, Forward, HitCheckTime);
-//			}
-//		}
-//
-//		// 서버에서 진행 (서버의 플레이어 때 판정, 굳이 패킷을 보낼 필요가 없으므로 바로 처리하면 됨)
-//		else
-//		{
-//			FColor DebugColor = HitDetected ? FColor::Green : FColor::Red;
-//			DrawDebugAttackRange(DebugColor, Start, End, Forward);
-//
-//			// 서버인 경우에는 판정하지 않고 그대로 대미지 전달 로직 수행.
-//			if (HitDetected)
-//			{
-//				AttackHitConfirm(OutHitResult.GetActor());
-//			}
-//		}
-//#if 0
-//		if (HitDetected)
-//		{
-//			FDamageEvent DamageEvent;
-//			OutHitResult.GetActor()->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
-//		}
-//
-//#if ENABLE_DRAW_DEBUG
-//
-//		FVector CapsuleOrigin = Start + (End - Start) * 0.5f;
-//		float CapsuleHalfHeight = AttackRange * 0.5f;
-//		FColor DrawColor = HitDetected ? FColor::Green : FColor::Red;
-//
-//		DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(GetActorForwardVector()).ToQuat(), DrawColor, false, 5.0f);
-//
-//#endif
-//#endif
-//	}
+		FHitResult OutHitResult;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
+
+		const float AttackRange = Stat->GetTotalStat().AttackRange;
+		const float AttackRadius = Stat->GetAttackRadius();
+		const float AttackDamage = Stat->GetTotalStat().Attack;
+		const FVector Forward = GetActorForwardVector();
+		const FVector Start = GetActorLocation() + Forward * GetCapsuleComponent()->GetScaledCapsuleRadius();
+		const FVector End = Start + GetActorForwardVector() * AttackRange;
+
+		bool HitDetected = GetWorld()->SweepSingleByChannel(OutHitResult, Start, End, FQuat::Identity, CCHANNEL_P4WACTION, FCollisionShape::MakeSphere(AttackRadius), Params);
+
+		float HitCheckTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+		if (!HasAuthority())
+		{
+			if (HitDetected)
+			{
+				ServerRPCNotifyHit(OutHitResult, HitCheckTime);
+			}
+			else
+			{
+				ServerRPCNotifyMiss(Start, End, Forward, HitCheckTime);
+			}
+		}
+		else
+		{
+			FColor DebugColor = HitDetected ? FColor::Green : FColor::Red;
+			//DrawDebugAttackRange(DebugColor, Start, End, Forward);
+			if (HitDetected)
+			{
+				if (HasAuthority())
+				{
+					float CurrentAttackDamage;
+					if (bIsInCombo)
+					{
+						CurrentAttackDamage = CurrentDamage;
+					}
+					else
+					{
+						CurrentAttackDamage = Stat->GetTotalStat().Attack;
+					}
+					FDamageEvent DamageEvent;
+					OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+					UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), CurrentAttackDamage);
+
+				}
+			}
+		}
+	}
 }
-
-	/*
-	//if (IsLocallyControlled())
-	//{
-	//	FHitResult OutHitResult;
-	//	FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
-
-	//	const float AttackRange = Stat->GetTotalStat().AttackRange;
-	//	const float AttackRadius = Stat->GetAttackRadius();
-	//	const float AttackDamage = Stat->GetTotalStat().Attack;
-	//	const FVector Forward = GetActorForwardVector();
-	//	const FVector Start = GetActorLocation() + Forward * GetCapsuleComponent()->GetScaledCapsuleRadius();
-	//	const FVector End = Start + GetActorForwardVector() * AttackRange;
-
-	//	bool HitDetected = GetWorld()->SweepSingleByChannel(OutHitResult, Start, End, FQuat::Identity, CCHANNEL_P4WACTION, FCollisionShape::MakeSphere(AttackRadius), Params);
-
-	//	float HitCheckTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
-	//	if (!HasAuthority())
-	//	{
-	//		if (HitDetected)
-	//		{
-	//			ServerRPCNotifyHit(OutHitResult, HitCheckTime);
-	//		}
-	//		else
-	//		{
-	//			ServerRPCNotifyMiss(Start, End, Forward, HitCheckTime);
-	//		}
-	//	}
-	//	else
-	//	{
-	//		FColor DebugColor = HitDetected ? FColor::Green : FColor::Red;
-	//		DrawDebugAttackRange(DebugColor, Start, End, Forward);
-	//		if (HitDetected)
-	//		{
-	//			AttackHitConfirm(OutHitResult.GetActor());
-	//		}
-	//	}
-	//}
-	*/
 
 float AP4WCharacterPlayer_PLD::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	Stat->ApplyDamage(DamageAmount);
-
-	return DamageAmount;
+	return ActualDamage;
 }
+
+void AP4WCharacterPlayer_PLD::DrawDebugAttackRange(const FColor& DrawColor, FVector TraceStart, FVector TraceEnd, FVector Forward)
+{
+#if ENABLE_DRAW_DEBUG
+
+	const float AttackRange = Stat->GetTotalStat().AttackRange;
+	const float AttackRadius = Stat->GetAttackRadius();
+	FVector CapsuleOrigin = TraceStart + (TraceEnd - TraceStart) * 0.5f;
+	float CapsuleHalfHeight = AttackRange * 0.5f;
+	DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(Forward).ToQuat(), DrawColor, false, 5.0f);
+
+#endif
+}
+
+void AP4WCharacterPlayer_PLD::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AP4WCharacterPlayer_PLD, bIsInCombo);
+}
+
+void AP4WCharacterPlayer_PLD::ProcessComboCommand()
+{
+	//if (ComboNum == 0)
+	//{
+	//	ComboActionBegin();
+	//	return;
+	//}
+
+	if (!ComboTimerHandle.IsValid())
+	{
+		HasNextComboCommand = false;
+	}
+	else
+	{
+		HasNextComboCommand = true;
+	}
+}
+
+void AP4WCharacterPlayer_PLD::ComboActionBegin()
+{
+	//// 콤보 상태를 1로 설정.
+	//CurrentCombo = 1;
+
+	//// 이동 비활성화.
+	////GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+	//// 몽타주 재생.
+	//// 애님 인스턴스는 스켈레탈 메시가 가지고 있음
+	//UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	//if (AnimInstance)
+	//{
+	//	//const float AttackSpeedRate = 1.0f;
+	//	const float AttackSpeedRate = Stat->GetTotalStat().AttackSpeed;
+	//	AnimInstance->Montage_Play(ComboActionMontage, AttackSpeedRate);
+
+	//	// 몽타주 재생이 시작되면, 재생이 종료될 때 호출되는 델리게이트에 등록.
+	//	FOnMontageEnded EndDelegate;
+	//	EndDelegate.BindUObject(this, &AABCharacterBase::ComboActionEnd);
+	//	AnimInstance->Montage_SetEndDelegate(EndDelegate, ComboActionMontage);	// 몽타주가 끝나면 ComboActionEnd라는 함수가 호출됨
+
+	//	// 콤보 확인을 위한 타이머 설정.
+	//	ComboTimerHandle.Invalidate();
+	//	SetComboCheckTimer();
+	//}
+	
+}
+
+void AP4WCharacterPlayer_PLD::ComboActionEnd(UAnimMontage* TargetMontage, bool IsProperlyEnded)
+{
+	//// 유효성 검사.
+	//ensure(CurrentCombo != 0);
+
+	//// 콤보 초기화.
+	//CurrentCombo = 0;
+
+	//// 캐릭터 무브먼트 컴포넌트 모드 복구.
+	//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+
+	//// 공격이 끝나면 NotifyComboActionEnd 함수 호출.
+	//NotifyComboActionEnd();
+}
+
+//void AP4WCharacterPlayer_PLD::SetComboCheckTimer()
+//{
+//	int32 ComboIndex = ComboNum - 1;
+//	ensure(ComboActionData->EffectiveFrameCount.IsValidIndex(ComboIndex));
+//
+//	const float AttackSpeedRate = 1.0f;
+//	float ComboEffectiveTime = (ComboActionData->EffectiveFrameCount[ComboIndex] / ComboActionData->FrameRate) / AttackSpeedRate;
+//	if (ComboEffectiveTime > 0.0f)
+//	{
+//		GetWorld()->GetTimerManager().SetTimer(ComboTimerHandle, this, &AP4WCharacterPlayer_PLD::ComboCheck, ComboEffectiveTime, false);
+//	}
+//}
+
+//bool AP4WCharacterPlayer_PLD::ComboCheck()
+//{
+//	FTimerHandle ComboHandle;
+//	GetWorld()->GetTimerManager().SetTimer(
+//		ComboHandle,
+//		FTimerDelegate::CreateLambda([&]()
+//			{
+//				return false;
+//			}
+//		), 2.0f, false
+//	);
+//
+//	return true;
+//}
+
+//void AP4WCharacterPlayer_PLD::ComboCheck()
+//{
+//	ComboTimerHandle.Invalidate(); 
+//	if (HasNextComboCommand)
+//	{
+//		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+//
+//		ComboNum = FMath::Clamp(ComboNum + 1, 1, ComboActionData->MaxComboCount);
+//		FName NextSection = *FString::Printf(TEXT("%s%d"), *ComboActionData->MontageSectionNamePrefix, ComboNum);
+//		//AnimInstance->Montage_JumpToSection(NextSection, ComboActionMontage);
+//		SetComboCheckTimer();
+//		HasNextComboCommand = false;
+//	}
+//}

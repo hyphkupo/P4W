@@ -17,11 +17,11 @@ void AP4WCharacterPlayer_BLM::SetupPlayerInputComponent(UInputComponent* PlayerI
 	if (EnhancedInputComponent)
 	{
 	// Attack Section
-		EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::BlizzardAttack);
-		EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::FireAttack);
-		EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::ThunderAttack);
-		EnhancedInputComponent->BindAction(RAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::FireBallAttack);
-		EnhancedInputComponent->BindAction(FAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::LeyLines);
+		//EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::BlizzardAttack);
+		//EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::FireAttack);
+		//EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::ThunderAttack);
+		//EnhancedInputComponent->BindAction(RAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::FireBallAttack);
+		//EnhancedInputComponent->BindAction(FAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::LeyLines);
 	}
 }
 

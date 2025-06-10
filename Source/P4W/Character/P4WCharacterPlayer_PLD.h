@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Character/P4WCharacterBase.h"
 #include "Interface/P4WCharacterHUDInterface.h"
+#include "Skill/SkillSystemComponent.h"
 #include "P4WCharacterPlayer_PLD.generated.h"
 
 /**
@@ -22,6 +23,27 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
+	// Attack Input
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> AutoAttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Combo1AttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Combo2AttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Combo3AttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> RAttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> FAttackAction;
+
+protected:
+	void AutoAttack(const FInputActionValue& Value);
 	void Combo1Attack(const FInputActionValue& Value);
 	void Combo2Attack(const FInputActionValue& Value);
 	void Combo3Attack(const FInputActionValue& Value);
@@ -60,7 +82,42 @@ protected:
 protected:
 	virtual void AttackHitCheck() override;
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	void DrawDebugAttackRange(const FColor& DrawColor, FVector TraceStart, FVector TraceEnd, FVector Forward);
+
+	float AcceptCheckDistance = 300.0f;
 
 public:
 	float CooldownTime;
+
+public:
+	UPROPERTY(VisibleAnywhere)
+	USkillSystemComponent* SkillSystem;
+
+
+protected:
+	// 프로퍼티 리플리케이션 등록을 위한 함수 오버라이딩
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	UPROPERTY(Replicated)
+	uint8 bIsInCombo : 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UP4WPLDComboActionData> ComboActionData;
+
+	void ProcessComboCommand(); 
+
+	void ComboActionBegin();
+	void ComboActionEnd(UAnimMontage* TargetMontage, bool IsProperlyEnded);
+	//void SetComboCheckTimer();
+	//void ComboCheck();
+
+	//bool ComboCheck();
+
+	FTimerHandle ComboTimerHandle;
+	bool HasNextComboCommand = false;
+	uint32 PrevComboNum;
+	float TimerElapsed;
+	float PrevTimerElapsed;
+	uint8 bCanNextCombo1 : 1;
+	uint8 bCanNextCombo2 : 1;
 };

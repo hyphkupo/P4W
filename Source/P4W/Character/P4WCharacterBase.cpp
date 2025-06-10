@@ -31,6 +31,8 @@
 #include "Physics/P4WCollision.h"
 #include "Engine/DamageEvents.h"
 
+#include "Skill/SkillSystemComponent.h"
+
 //#include "GameFramework/PlayerStart.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -82,42 +84,7 @@ AP4WCharacterBase::AP4WCharacterBase()
 		ZoomAction = ZoomActionRef.Object;
 	}
 
-// Attack Input
-	static ConstructorHelpers::FObjectFinder<UInputAction> AutoAttackActionRef(TEXT("/Game/Input/IA_AutoAttack.IA_AutoAttack"));
-	if (AutoAttackActionRef.Object)
-	{
-		AutoAttackAction = AutoAttackActionRef.Object;
-	}
 
-	static ConstructorHelpers::FObjectFinder<UInputAction> Combo1AttackActionRef(TEXT("/Game/Input/IA_Combo1Attack.IA_Combo1Attack"));
-	if (Combo1AttackActionRef.Object)
-	{
-		Combo1AttackAction = Combo1AttackActionRef.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UInputAction> Combo2AttackActionRef(TEXT("/Game/Input/IA_Combo2Attack.IA_Combo2Attack"));
-	if (Combo2AttackActionRef.Object)
-	{
-		Combo2AttackAction = Combo2AttackActionRef.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UInputAction> Combo3AttackActionRef(TEXT("/Game/Input/IA_Combo3Attack.IA_Combo3Attack"));
-	if (Combo3AttackActionRef.Object)
-	{
-		Combo3AttackAction = Combo3AttackActionRef.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UInputAction> RAttackActionRef(TEXT("/Game/Input/IA_RAttack.IA_RAttack"));
-	if (RAttackActionRef.Object)
-	{
-		RAttackAction = RAttackActionRef.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UInputAction> FAttackActionRef(TEXT("/Game/Input/IA_FAttack.IA_FAttack"));
-	if (FAttackActionRef.Object)
-	{
-		FAttackAction = FAttackActionRef.Object;
-	}
 
 	// Animation
 	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstanceRef(TEXT("/Game/Animation/ABP_P4WCharacter1.ABP_P4WCharacter1_C"));
@@ -199,6 +166,9 @@ AP4WCharacterBase::AP4WCharacterBase()
 	// Stat Component
 	Stat = CreateDefaultSubobject<UP4WCharacterStatComponent>(TEXT("Stat"));
 
+	// Skill Component
+	Skill = CreateDefaultSubobject<USkillSystemComponent>(TEXT("Skill"));
+
 	// Widget Component
 	//HpBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widget"));
 	//HpBar->SetRelativeLocation(FVector(0.0f, 0.0f, 80.0f));
@@ -223,6 +193,7 @@ AP4WCharacterBase::AP4WCharacterBase()
 	//	HpBarWidget->AddToViewport();
 	//}
 
+	bReplicates = true;
 	bCanAttack = true;
 }
 
@@ -304,6 +275,7 @@ void AP4WCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AP4WCharacterBase, bCanAttack);
+	DOREPLIFETIME(AP4WCharacterBase, CurrentDamage);
 	//DOREPLIFETIME(AP4WCharacterBase, ComboNum);
 }
 
@@ -392,13 +364,7 @@ void AP4WCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		// Zoom
 		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Zoom);
 
-	// Attack Section
-		// Auto Attack
-		EnhancedInputComponent->BindAction(AutoAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::AutoAttack);
 
-		EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Combo1Attack);
-		EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Combo2Attack);
-		EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Combo3Attack);
 	}
 }
 
@@ -448,119 +414,6 @@ void AP4WCharacterBase::Zoom(const FInputActionValue& Value)
 	float ChangeLength;
 	ChangeLength = SpringArm->TargetArmLength - ZoomVector.X * 10.0f;
 	SpringArm->TargetArmLength = FMath::Clamp(ChangeLength, 50.0f, 800.0f);
-}
-
-void AP4WCharacterBase::AutoAttack(const FInputActionValue& Value)
-{
-	if (bCanAttack)
-	{
-		bCanAttack = false;
-
-		APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	
-		//DisableInput(PlayerController);
-
-		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-
-		FTimerHandle Handle;
-		GetWorld()->GetTimerManager().SetTimer(
-			Handle,
-			FTimerDelegate::CreateLambda([&]()
-				{
-					//EnableInput(Cast<APlayerController>(GetController()));
-					//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-					bCanAttack = true;
-				}
-			), 1.0f, false
-		);
-		PlayAutoAttackAnimation();
-
-		ServerRPCAutoAttack();
-	}
-}
-
-void AP4WCharacterBase::Combo1Attack(const FInputActionValue& Value)
-{
-	if (bCanAttack)
-	{
-		bCanAttack = false;
-		ComboNum = 1;
-	
-		APlayerController* PlayerController = Cast<APlayerController>(GetController());
-		//DisableInput(PlayerController);
-
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-
-		FTimerHandle Handle;
-		GetWorld()->GetTimerManager().SetTimer(
-			Handle,
-			FTimerDelegate::CreateLambda([&]()
-				{
-					//EnableInput(Cast<APlayerController>(GetController()));
-					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-					bCanAttack = true;
-				}
-			), 1.0f, false
-		);
-		PlayComboAttackAnimation(ComboNum);
-		
-		ServerRPCComboAttack(ComboNum);
-	}
-}
-
-void AP4WCharacterBase::Combo2Attack(const FInputActionValue& Value)
-{
-	if (bCanAttack)
-	{
-		bCanAttack = false;
-		ComboNum = 2;
-
-		APlayerController* PlayerController = Cast<APlayerController>(GetController());
-		//DisableInput(PlayerController);
-
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-
-		FTimerHandle Handle;
-		GetWorld()->GetTimerManager().SetTimer(
-			Handle,
-			FTimerDelegate::CreateLambda([&]()
-				{
-					//EnableInput(Cast<APlayerController>(GetController()));
-					GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-					bCanAttack = true;
-				}
-			), 1.0f, false
-		);
-		PlayComboAttackAnimation(ComboNum);
-		
-		ServerRPCComboAttack(ComboNum);
-	}
-}
-
-void AP4WCharacterBase::Combo3Attack(const FInputActionValue& Value)
-{
-	if (bCanAttack)
-	{
-		bCanAttack = false;
-		ComboNum = 3;
-	
-		APlayerController* PlayerController = Cast<APlayerController>(GetController());
-
-		FTimerHandle Handle;
-		GetWorld()->GetTimerManager().SetTimer(
-			Handle,
-			FTimerDelegate::CreateLambda([&]()
-				{
-					bCanAttack = true;
-				}
-			), 1.8f, false
-		);
-		PlayComboAttackAnimation(ComboNum);
-
-		ServerRPCComboAttack(ComboNum);
-
-		//UE_LOG(LogTemp, Log, TEXT("[%s] ComboInput ComboNum: %d"), LOG_NETMODEINFO, ComboNum);
-	}
 }
 
 void AP4WCharacterBase::PlayAutoAttackAnimation()
@@ -619,34 +472,47 @@ void AP4WCharacterBase::PlayComboAttackAnimation(int32 Num)
 
 void AP4WCharacterBase::AttackHitCheck()
 {
-	FHitResult OutHitResult;
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
-
-	const float AttackRange = Stat->GetTotalStat().AttackRange;
-	const float AttackRadius = Stat->GetAttackRadius();
-	const float AttackDamage = Stat->GetTotalStat().Attack;
-	const FVector Start = GetActorLocation() + GetActorForwardVector() * GetCapsuleComponent()->GetScaledCapsuleRadius();
-	const FVector End = Start + GetActorForwardVector() * AttackRange;
-
-	bool HitDetected = GetWorld()->SweepSingleByChannel(OutHitResult, Start, End, FQuat::Identity, CCHANNEL_P4WACTION, FCollisionShape::MakeSphere(AttackRadius), Params);
-	UE_LOG(LogTemp, Log, TEXT("AttackHitCheck"));
-
-	if (HitDetected)
-	{
-		UE_LOG(LogTemp, Log, TEXT("HitDetected"));
-		FDamageEvent DamageEvent;
-		OutHitResult.GetActor()->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
-	}
-
-#if ENABLE_DRAW_DEBUG
-
-	FVector CapsuleOrigin = Start + (End - Start) * 0.5f;
-	float CapsuleHalfHeight = AttackRange * 0.5f;
-	FColor DrawColor = HitDetected ? FColor::Green : FColor::Red;
-
-	DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(GetActorForwardVector()).ToQuat(), DrawColor, false, 5.0f);
-
-#endif
+//	FHitResult OutHitResult;
+//	FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
+//	const float AttackRange = Stat->GetTotalStat().AttackRange;
+//	const float AttackRadius = Stat->GetAttackRadius();
+//	float AttackDamage;
+//	if (bIsInCombo)
+//	{
+//		AttackDamage = CurrentDamage;
+//		UE_LOG(LogTemp, Log, TEXT("[%s] AttackDamagege: %f"), LOG_NETMODEINFO, AttackDamage);
+//
+//	}
+//	else
+//	{
+//		AttackDamage = Stat->GetTotalStat().Attack;
+//	}
+//
+//	//UE_LOG(LogTemp, Log, TEXT("Damage:%f"), AttackDamage);
+//
+//	const FVector Start = GetActorLocation() + GetActorForwardVector() * GetCapsuleComponent()->GetScaledCapsuleRadius();
+//	const FVector End = Start + GetActorForwardVector() * AttackRange;
+//
+//	bool HitDetected = GetWorld()->SweepSingleByChannel(OutHitResult, Start, End, FQuat::Identity, CCHANNEL_P4WACTION, FCollisionShape::MakeSphere(AttackRadius), Params);
+//	UE_LOG(LogTemp, Log, TEXT("AttackHitCheck"));
+//
+//	if (HitDetected)
+//	{
+//		UE_LOG(LogTemp, Log, TEXT("HitDetected"));
+//		FDamageEvent DamageEvent;
+//		OutHitResult.GetActor()->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
+//		UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), AttackDamage);
+//	}
+//
+//#if ENABLE_DRAW_DEBUG
+//
+//	FVector CapsuleOrigin = Start + (End - Start) * 0.5f;
+//	float CapsuleHalfHeight = AttackRange * 0.5f;
+//	FColor DrawColor = HitDetected ? FColor::Green : FColor::Red;
+//
+//	DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(GetActorForwardVector()).ToQuat(), DrawColor, false, 5.0f);
+//
+//#endif
 
 }
 

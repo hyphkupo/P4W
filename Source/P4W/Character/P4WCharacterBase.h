@@ -51,24 +51,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> ZoomAction;
 
-// Attack Input
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputAction> AutoAttackAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputAction> Combo1AttackAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputAction> Combo2AttackAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputAction> Combo3AttackAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputAction> RAttackAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputAction> FAttackAction;
 
 protected:
 // Called for input
@@ -80,12 +63,6 @@ protected:
 	void Look(const FInputActionValue& Value);
 	void Zoom(const FInputActionValue& Value);
 
-// Attack Input
-	void AutoAttack(const FInputActionValue& Value);
-	
-	void Combo1Attack(const FInputActionValue& Value);
-	void Combo2Attack(const FInputActionValue& Value);
-	void Combo3Attack(const FInputActionValue& Value);
 
 // Play AnimMontage
 	void PlayAutoAttackAnimation();
@@ -182,5 +159,15 @@ protected:
 protected:
 	virtual void AttackHitCheck() override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class USkillSystemComponent> Skill;
+
+
+public:
+	UPROPERTY(Replicated)
+	float CurrentDamage;
+	
 
 };
