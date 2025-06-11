@@ -79,7 +79,11 @@ AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 
 	bReplicates = true;
 	bIsInCombo = false;
+	bIsSheltron = false;
 
+	bCanPlayCombo1 = true;
+	bCanPlayCombo2 = true;
+	bCanPlayCombo3 = true;
 }
 
 void AP4WCharacterPlayer_PLD::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -95,6 +99,7 @@ void AP4WCharacterPlayer_PLD::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Combo1Attack);
 	EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Combo2Attack);
 	EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Combo3Attack);
+	EnhancedInputComponent->BindAction(RAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Sheltron);
 }
 
 void AP4WCharacterPlayer_PLD::AutoAttack(const FInputActionValue& Value)
@@ -118,7 +123,7 @@ void AP4WCharacterPlayer_PLD::AutoAttack(const FInputActionValue& Value)
 					//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 					bCanAttack = true;
 				}
-			), 1.0f, false
+			), 1.5f, false
 		);
 		PlayAutoAttackAnimation();
 
@@ -130,13 +135,11 @@ void AP4WCharacterPlayer_PLD::AutoAttack(const FInputActionValue& Value)
 // Damage: 220
 void AP4WCharacterPlayer_PLD::Combo1Attack(const FInputActionValue& Value)
 {
-	if (bCanAttack)
+	if (bCanAttack && bCanPlayCombo1)
 	{
 		CooldownTime = 2.5f;
-	}
+		bCanPlayCombo1 = false;
 
-	if (bCanAttack)
-	{
 		bCanNextCombo1 = true;
 		bCanAttack = false;
 		bIsInCombo = true;
@@ -172,6 +175,18 @@ void AP4WCharacterPlayer_PLD::Combo1Attack(const FInputActionValue& Value)
 			), 2.0f, false
 		);
 
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_Combo1,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayCombo1 = true;
+				}
+			), CooldownTime, false
+		);
+
+		// 쿨타임 출력
+		UE_LOG(LogTemp, Log, TEXT("CooldownTime: %f/%f"), GetWorld()->GetTimerManager().GetTimerElapsed(CooldownHandle_Combo1), CooldownTime)
+
 		CurrentDamage = 22.0f;
 
 		PlayComboAttackAnimation(ComboNum);
@@ -184,13 +199,11 @@ void AP4WCharacterPlayer_PLD::Combo1Attack(const FInputActionValue& Value)
 // Damage: 170 / if Combo Action 1, Combo Potency: 330
 void AP4WCharacterPlayer_PLD::Combo2Attack(const FInputActionValue& Value)
 {
-	if (bCanAttack)
+	if (bCanAttack && bCanPlayCombo2)
 	{
 		CooldownTime = 2.5f;
-	}
+		bCanPlayCombo2 = false;
 
-	if (bCanAttack)
-	{
 		bCanNextCombo2 = true;
 		bCanAttack = false;
 		bIsInCombo = true;
@@ -226,6 +239,18 @@ void AP4WCharacterPlayer_PLD::Combo2Attack(const FInputActionValue& Value)
 			), 2.0f, false
 		);
 
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_Combo2,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayCombo2 = true;
+				}
+			), CooldownTime, false
+		);
+
+		// 쿨타임 출력
+		UE_LOG(LogTemp, Log, TEXT("CooldownTime: %f/%f"), GetWorld()->GetTimerManager().GetTimerElapsed(CooldownHandle_Combo2), CooldownTime)
+
 		if (PrevComboNum == 1 && bCanNextCombo1)
 		{
 			CurrentDamage = 33.0f;
@@ -245,13 +270,11 @@ void AP4WCharacterPlayer_PLD::Combo2Attack(const FInputActionValue& Value)
 // Damage: 100 / if Combo Action 1, Combo Potency: 330
 void AP4WCharacterPlayer_PLD::Combo3Attack(const FInputActionValue& Value)
 {
-	if (bCanAttack)
+	if (bCanAttack && bCanPlayCombo3)
 	{
 		CooldownTime = 2.5f;
-	}
+		bCanPlayCombo3 = false;
 
-	if (bCanAttack)
-	{
 		bCanAttack = false;
 		bIsInCombo = true;
 
@@ -273,6 +296,18 @@ void AP4WCharacterPlayer_PLD::Combo3Attack(const FInputActionValue& Value)
 				}
 			), 1.8f, false
 		);
+
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_Combo3,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayCombo3 = true;
+				}
+			), CooldownTime, false
+		);
+
+		// 쿨타임 출력
+		UE_LOG(LogTemp, Log, TEXT("CooldownTime: %f/%f"), GetWorld()->GetTimerManager().GetTimerElapsed(CooldownHandle_Combo3), CooldownTime)
 
 		if (PrevComboNum == 2 && bCanNextCombo2)
 		{
@@ -310,12 +345,23 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 // Duration: 6s, Oath Gauge Cost: 50
 void AP4WCharacterPlayer_PLD::Sheltron(const FInputActionValue& Value)
 {
+	bIsSheltron = true;
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				bIsSheltron = false;
+			}
+		), 6.0f, false
+	);
+
 	if (bCanAttack)
 	{
 		CooldownTime = 5.0f;
 
 	}
-
 }
 
 // Cast: Instant, Cooldown time: 30s, MP Cost: 0MP, Range: 25y, Radius: 0y
@@ -348,19 +394,41 @@ void AP4WCharacterPlayer_PLD::ServerRPCNotifyHit_Implementation(const FHitResult
 		{
 			if (HasAuthority())
 			{
-				float AttackDamage;
+				//UE_LOG(LogTemp, Log, TEXT("[%s]CurrentDamage In If: %f"), LOG_NETMODEINFO, CurrentDamage);
+				//float AttackDamage;
 				if (bIsInCombo)
 				{
-					AttackDamage = CurrentDamage;
+					//AttackDamage = CurrentDamage;
+					PrevDamage = Stat->GetTotalStat().Attack;
+					//UE_LOG(LogTemp, Log, TEXT("[%s]CurrentDamage In If: %f"), LOG_NETMODEINFO, CurrentDamage);
+					if (bIsSheltron)
+					{
+						Stat->SetDamage(CurrentDamage * 0.85);
+					}
+					else
+					{
+						Stat->SetDamage(CurrentDamage);
+					}
 				}
 				else
 				{
-					AttackDamage = Stat->GetTotalStat().Attack;
+					//UE_LOG(LogTemp, Log, TEXT("[%s]CurrentDamage In If: %f"), LOG_NETMODEINFO, CurrentDamage);
+					//AttackDamage = Stat->GetTotalStat().Attack;
+					//Stat->SetDamage(30.0f);
 				}
 				FDamageEvent DamageEvent;
-				HitActor->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
-				UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), AttackDamage);
+				if (bIsSheltron)
+				{
+					HitActor->TakeDamage(Stat->GetTotalStat().Attack * 0.85, DamageEvent, GetController(), this);
+				}
+				else
+				{
+					HitActor->TakeDamage(Stat->GetTotalStat().Attack, DamageEvent, GetController(), this);
+				}
+				UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), Stat->GetTotalStat().Attack);
 
+				// 기본 공격 대미지로 되돌림
+				Stat->SetDamage(PrevDamage);
 			}
 		}
 		else
@@ -383,6 +451,16 @@ bool AP4WCharacterPlayer_PLD::ServerRPCNotifyMiss_Validate(FVector_NetQuantize T
 
 void AP4WCharacterPlayer_PLD::ServerRPCNotifyMiss_Implementation(FVector_NetQuantize TraceStart, FVector_NetQuantize TraceEnd, FVector_NetQuantizeNormal TraceDir, float HitCheckTime)
 {
+}
+
+void AP4WCharacterPlayer_PLD::ServerRPCApplyDamage_Implementation(const FHitResult& HitResult, float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	HitResult.GetActor()->TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+}
+
+void AP4WCharacterPlayer_PLD::ServerRPCApplyTargetDamage_Implementation(AActor* Actor, float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	Actor->TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
 }
 
 void AP4WCharacterPlayer_PLD::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
@@ -420,9 +498,66 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 		float HitCheckTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
 		if (!HasAuthority())
 		{
+			// @Todo: 원거리 공격
+			if (HitTarget)
+			{
+				FDamageEvent DamageEvent;
+				float CurrentAttackDamage;
+				if (bIsInCombo)
+				{
+					CurrentAttackDamage = CurrentDamage;
+				}
+				else
+				{
+					CurrentAttackDamage = Stat->GetTotalStat().Attack;
+				}
+
+				AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+				if (GetHitActorTarget->bIsSheltron)
+				{
+					ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+				}
+				else
+				{
+					ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage, DamageEvent, GetController(), this);
+				}
+			}
+
 			if (HitDetected)
 			{
-				ServerRPCNotifyHit(OutHitResult, HitCheckTime);
+				//ServerRPCNotifyHit(OutHitResult, HitCheckTime);
+				float CurrentAttackDamage;
+				if (bIsInCombo)
+				{
+					CurrentAttackDamage = CurrentDamage;
+				}
+				else
+				{
+					CurrentAttackDamage = Stat->GetTotalStat().Attack;
+				}
+
+				FDamageEvent DamageEvent;
+				UE_LOG(LogTemp, Log, TEXT("[%s]Sheltron: %d"), LOG_NETMODEINFO, bIsSheltron);
+				
+				AP4WCharacterPlayer_PLD* GetHitActor = Cast<AP4WCharacterPlayer_PLD>(OutHitResult.GetActor());
+				if (GetHitActor)
+				{
+					if (GetHitActor->bIsSheltron)
+					{
+						ServerRPCApplyDamage(OutHitResult, CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+					}
+					else
+					{
+						ServerRPCApplyDamage(OutHitResult, CurrentAttackDamage, DamageEvent, GetController(), this);
+					}
+				}
+				//OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+				UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), CurrentAttackDamage);
+
+				//if (HasAuthority())
+				//{
+
+				//}
 			}
 			else
 			{
@@ -431,6 +566,30 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 		}
 		else
 		{
+			if (HitTarget)
+			{
+				FDamageEvent DamageEvent;
+				float CurrentAttackDamage;
+				if (bIsInCombo)
+				{
+					CurrentAttackDamage = CurrentDamage;
+				}
+				else
+				{
+					CurrentAttackDamage = Stat->GetTotalStat().Attack;
+				}
+
+				AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+				if (GetHitActorTarget->bIsSheltron)
+				{
+					HitTarget->TakeDamage(CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+				}
+				else
+				{
+					HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+				}
+			}
+
 			FColor DebugColor = HitDetected ? FColor::Green : FColor::Red;
 			//DrawDebugAttackRange(DebugColor, Start, End, Forward);
 			if (HitDetected)
@@ -447,7 +606,22 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 						CurrentAttackDamage = Stat->GetTotalStat().Attack;
 					}
 					FDamageEvent DamageEvent;
-					OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+					UE_LOG(LogTemp, Log, TEXT("Sheltron1: %d"), bIsSheltron);
+
+					AP4WCharacterPlayer_PLD* GetHitActor = Cast<AP4WCharacterPlayer_PLD>(OutHitResult.GetActor());
+
+					if (GetHitActor)
+					{
+						UE_LOG(LogTemp, Log, TEXT("[%s]Sheltron2: %d"), LOG_NETMODEINFO, GetHitActor->bIsSheltron);
+						if (GetHitActor->bIsSheltron)
+						{
+							OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+						}
+						else
+						{
+							OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+						}
+					}
 					UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), CurrentAttackDamage);
 
 				}
@@ -481,6 +655,7 @@ void AP4WCharacterPlayer_PLD::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AP4WCharacterPlayer_PLD, bIsInCombo);
+	DOREPLIFETIME(AP4WCharacterPlayer_PLD, bIsSheltron);
 }
 
 void AP4WCharacterPlayer_PLD::ProcessComboCommand()
@@ -501,6 +676,7 @@ void AP4WCharacterPlayer_PLD::ProcessComboCommand()
 	}
 }
 
+/*
 void AP4WCharacterPlayer_PLD::ComboActionBegin()
 {
 	//// 콤보 상태를 1로 설정.
@@ -588,3 +764,4 @@ void AP4WCharacterPlayer_PLD::ComboActionEnd(UAnimMontage* TargetMontage, bool I
 //		HasNextComboCommand = false;
 //	}
 //}
+*/

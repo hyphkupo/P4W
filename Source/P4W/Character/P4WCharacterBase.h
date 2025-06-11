@@ -51,7 +51,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> ZoomAction;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> TargetingAction;
 
 protected:
 // Called for input
@@ -63,6 +64,7 @@ protected:
 	void Look(const FInputActionValue& Value);
 	void Zoom(const FInputActionValue& Value);
 
+	void Targeting(const FInputActionValue& Value);
 
 // Play AnimMontage
 	void PlayAutoAttackAnimation();
@@ -168,6 +170,17 @@ protected:
 public:
 	UPROPERTY(Replicated)
 	float CurrentDamage;
-	
+
+protected:
+	void FindTarget();
+	float TargetingRange = 30.0f;
+	uint8 bHasLockTarget;
+
+public:
+	UPROPERTY()
+	TObjectPtr<class AActor> HitTarget;
+	TArray<class AActor*> HitActors;
+
+	void ConeDetectWithDotProduct();
 
 };

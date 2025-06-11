@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+Ôªø// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "P4WCharacterBase.h"
 #include "Engine/LocalPlayer.h"
@@ -32,6 +32,8 @@
 #include "Engine/DamageEvents.h"
 
 #include "Skill/SkillSystemComponent.h"
+
+#include "Kismet/KismetSystemLibrary.h"
 
 //#include "GameFramework/PlayerStart.h"
 
@@ -84,7 +86,11 @@ AP4WCharacterBase::AP4WCharacterBase()
 		ZoomAction = ZoomActionRef.Object;
 	}
 
-
+	static ConstructorHelpers::FObjectFinder<UInputAction> TargetingActionRef(TEXT("/Game/Input/IA_Targeting.IA_Targeting"));
+	if (TargetingActionRef.Object)
+	{
+		TargetingAction = TargetingActionRef.Object;
+	}
 
 	// Animation
 	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstanceRef(TEXT("/Game/Animation/ABP_P4WCharacter1.ABP_P4WCharacter1_C"));
@@ -156,7 +162,7 @@ AP4WCharacterBase::AP4WCharacterBase()
 	//SpringArm->TargetOffset = FVector(0.0f, 0.0f, 90.0f);
 	//SpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 90.0f));
 	
-	// ∫Æø° ∫Œµ˙»˜∏È ¿⁄µø¿∏∑Œ ƒ´∏ﬁ∂Û∏¶ æ’¿∏∑Œ ¿Ãµø«œµµ∑œ «œ¥¬ ∫Øºˆ
+	// Î≤ΩÏóê Î∂ÄÎî™ÌûàÎ©¥ ÏûêÎèôÏúºÎ°ú Ïπ¥Î©îÎùºÎ•º ÏïûÏúºÎ°ú Ïù¥ÎèôÌïòÎèÑÎ°ù ÌïòÎäî Î≥ÄÏàò
 	SpringArm->bDoCollisionTest = false;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -213,7 +219,7 @@ void AP4WCharacterBase::BeginPlay()
 
 		EnableInput(PlayerController);
 
-		// IMC º±≈√
+		// IMC ÏÑ†ÌÉù
 		if (UEnhancedInputLocalPlayerSubsystem* SubSystem =
 			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
@@ -277,6 +283,7 @@ void AP4WCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AP4WCharacterBase, bCanAttack);
 	DOREPLIFETIME(AP4WCharacterBase, CurrentDamage);
 	//DOREPLIFETIME(AP4WCharacterBase, ComboNum);
+	//DOREPLIFETIME(AP4WCharacterBase, HitTarget);
 }
 
 void AP4WCharacterBase::ClientRPCAutoAttack_Implementation()
@@ -291,7 +298,7 @@ void AP4WCharacterBase::ServerRPCAutoAttack_Implementation()
 
 void AP4WCharacterBase::MulticastRPCAutoAttack_Implementation()
 {
-	if (!IsLocallyControlled())		// ∑Œƒ√ø°º≠ Ω««‡µ«¡ˆ æ ¿∏∏È(= º≠πˆ∞° æ∆¥œ∏È)
+	if (!IsLocallyControlled())		// Î°úÏª¨ÏóêÏÑú Ïã§ÌñâÎêòÏßÄ ÏïäÏúºÎ©¥(= ÏÑúÎ≤ÑÍ∞Ä ÏïÑÎãàÎ©¥)
 	{
 		PlayAutoAttackAnimation();
 	}
@@ -314,19 +321,19 @@ void AP4WCharacterBase::ServerRPCComboAttack_Implementation(int32 Num)
 
 	//for (auto* PlayerController : TActorRange<APlayerController>(GetWorld()))
 	//{
-	//	// º≠πˆø° ¿÷¥¬ ≈¨∂Û¿Ãæ∆Æø° «ÿ¥Á«œ¥¬ «√∑π¿ÃæÓ ƒ¡∆Æ∑—∑Ø ∞≈∏£±‚.
+	//	// ÏÑúÎ≤ÑÏóê ÏûàÎäî ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏Ïóê Ìï¥ÎãπÌïòÎäî ÌîåÎ†àÏù¥Ïñ¥ Ïª®Ìä∏Î°§Îü¨ Í±∞Î•¥Í∏∞.
 	//	if (PlayerController && GetController() != PlayerController)
 	//	{
-	//		// ≈¨∂Û¿Ãæ∆Æ ¡ﬂø°º≠ ∫ª¿Œ¿Ã æ∆¥—¡ˆ »Æ¿Œ.
-	//		// ∏ÆΩºº≠πˆ¿« ƒ¡∆Æ∑—∑Ø ∞≈∏£±‚.
+	//		// ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ Ï§ëÏóêÏÑú Î≥∏Ïù∏Ïù¥ ÏïÑÎãåÏßÄ ÌôïÏù∏.
+	//		// Î¶¨Ïä®ÏÑúÎ≤ÑÏùò Ïª®Ìä∏Î°§Îü¨ Í±∞Î•¥Í∏∞.
 	//		if (!PlayerController->IsLocalController())
 	//		{
-	//			// ø©±‚∑Œ ≥—æÓø¬ «√∑π¿ÃæÓ ƒ¡∆Æ∑—∑Ø¥¬
-	//			// º≠πˆµµ æ∆¥œ∞Ì, ∫ª¿Œ ≈¨∂Û¿Ãæ∆Æµµ æ∆¥‘.
+	//			// Ïó¨Í∏∞Î°ú ÎÑòÏñ¥Ïò® ÌîåÎ†àÏù¥Ïñ¥ Ïª®Ìä∏Î°§Îü¨Îäî
+	//			// ÏÑúÎ≤ÑÎèÑ ÏïÑÎãàÍ≥†, Î≥∏Ïù∏ ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ÎèÑ ÏïÑÎãò.
 	//			AP4WCharacterBase* OtherPlayer = Cast<AP4WCharacterBase>(PlayerController);
 	//			if (OtherPlayer)
 	//			{
-	//				// Client RPC ¿¸º€.
+	//				// Client RPC Ï†ÑÏÜ°.
 	//				//ClientRPCPlayAnimation(OtherPlayer);
 	//				OtherPlayer->ClientRPCAutoAttack(this);
 	//			}
@@ -338,7 +345,7 @@ void AP4WCharacterBase::ServerRPCComboAttack_Implementation(int32 Num)
 
 void AP4WCharacterBase::MulticastRPCComboAttack_Implementation(int32 Num)
 {
-	if (!IsLocallyControlled())		// ∑Œƒ√ø°º≠ Ω««‡µ«¡ˆ æ ¿∏∏È(= º≠πˆ∞° æ∆¥œ∏È)
+	if (!IsLocallyControlled())		// Î°úÏª¨ÏóêÏÑú Ïã§ÌñâÎêòÏßÄ ÏïäÏúºÎ©¥(= ÏÑúÎ≤ÑÍ∞Ä ÏïÑÎãàÎ©¥)
 	{
 		PlayComboAttackAnimation(Num);
 	}
@@ -364,7 +371,8 @@ void AP4WCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		// Zoom
 		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Zoom);
 
-
+		// Targeting
+		EnhancedInputComponent->BindAction(TargetingAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Targeting);
 	}
 }
 
@@ -414,6 +422,12 @@ void AP4WCharacterBase::Zoom(const FInputActionValue& Value)
 	float ChangeLength;
 	ChangeLength = SpringArm->TargetArmLength - ZoomVector.X * 10.0f;
 	SpringArm->TargetArmLength = FMath::Clamp(ChangeLength, 50.0f, 800.0f);
+}
+
+void AP4WCharacterBase::Targeting(const FInputActionValue& Value)
+{
+	FindTarget();
+	//ConeDetectWithDotProduct();
 }
 
 void AP4WCharacterBase::PlayAutoAttackAnimation()
@@ -472,6 +486,7 @@ void AP4WCharacterBase::PlayComboAttackAnimation(int32 Num)
 
 void AP4WCharacterBase::AttackHitCheck()
 {
+	/*
 //	FHitResult OutHitResult;
 //	FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
 //	const float AttackRange = Stat->GetTotalStat().AttackRange;
@@ -513,7 +528,7 @@ void AP4WCharacterBase::AttackHitCheck()
 //	DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(GetActorForwardVector()).ToQuat(), DrawColor, false, 5.0f);
 //
 //#endif
-
+*/
 }
 
 float AP4WCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -524,6 +539,167 @@ float AP4WCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 	
 	return DamageAmount;
 }
+
+//	/** Object Query functions **/
+//	bool UKismetSystemLibrary::LineTraceSingleForObjects(const UObject * WorldContextObject, const FVector Start, const FVector End, const TArray<TEnumAsByte<EObjectTypeQuery> > &ObjectTypes, bool bTraceComplex, const TArray<AActor*>&ActorsToIgnore, EDrawDebugTrace::Type DrawDebugType, FHitResult & OutHit, bool bIgnoreSelf, FLinearColor TraceColor, FLinearColor TraceHitColor, float DrawTime)
+//	{
+//		static const FName LineTraceSingleName(TEXT("LineTraceSingleForObjects"));
+//		FCollisionQueryParams Params = ConfigureCollisionParams(LineTraceSingleName, bTraceComplex, ActorsToIgnore, bIgnoreSelf, WorldContextObject);
+//
+//		FCollisionObjectQueryParams ObjectParams = ConfigureCollisionObjectParams(ObjectTypes);
+//		if (ObjectParams.IsValid() == false)
+//		{
+//			UE_LOG(LogBlueprintUserMessages, Warning, TEXT("Invalid object types"));
+//			return false;
+//		}
+//
+//		UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+//		bool const bHit = World ? World->LineTraceSingleByObjectType(OutHit, Start, End, ObjectParams, Params) : false;
+//
+//#if ENABLE_DRAW_DEBUG
+//		DrawDebugLineTraceSingle(World, Start, End, DrawDebugType, bHit, OutHit, TraceColor, TraceHitColor, DrawTime);
+//#endif
+//
+//		return bHit;
+//	}
+
+//void AP4WCharacterBase::FindTarget()
+//{
+//	FVector Start = GetActorLocation();
+//	FVector End = Start + GetActorForwardVector() * 400.0f;
+//
+//	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+//	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn)); // Ïòà: Ï∫êÎ¶≠ÌÑ∞Îßå Í∞êÏßÄ
+//
+//	TArray<AActor*> ActorsToIgnore;
+//	ActorsToIgnore.Add(this);
+//
+//	FHitResult HitResult;
+//
+//	for (int i = 0; i < 120; ++i)
+//	{
+//		bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+//			GetWorld(),
+//			Start,
+//			End,
+//			30.0f,
+//			ObjectTypes,
+//			false,                  // bTraceComplex
+//			ActorsToIgnore,
+//			EDrawDebugTrace::ForDuration, // ÎîîÎ≤ÑÍ∑∏ ÎùºÏù∏ ÌëúÏãú
+//			HitResult,
+//			true                   // bIgnoreSelf
+//		);
+//
+//		if (bHit)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.GetActor()->GetName());
+//			HitActors.Add(HitResult.GetActor());
+//		}
+//	}
+//
+//	HitTarget = HitResult.GetActor();
+//
+//	/*
+//	FVector CameraForwardVector = GetActorForwardVector();
+//	FVector LeftEndVector = CameraForwardVector.RotateAngleAxis(-60.0f, FVector::UpVector);
+//	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypeToLock;
+//	ObjectTypeToLock.Add(EObjectTypeQuery::ObjectTypeQuery3);
+//	FCollisionQueryParams QueryParams(NAME_None);
+//	TArray<AActor*> ActorsToNotTargeting;
+//	ActorsToNotTargeting.Add(this);
+//	FVector StartPoint = GetActorLocation();
+//	FHitResult HitResult;
+//	float ClosestDist = 50.0f;
+//	AActor* ClosestHitActor = nullptr;
+//	for (int i = 0; i < 120; i += 5)
+//	{
+//		FVector Direction = LeftEndVector.RotateAngleAxis(i, FVector::UpVector);
+//		FVector EndPoint = StartPoint + Direction * TargetingRange;
+//		bool bIsHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+//			GetWorld(), StartPoint, EndPoint, 200.f,
+//			ObjectTypeToLock, false, ActorsToNotTargeting, EDrawDebugTrace::ForDuration,
+//			HitResult, true,
+//			FLinearColor::Red, FLinearColor::Green, 2.f);
+//		if (bIsHit && HitResult.Distance < ClosestDist)
+//		{
+//			ClosestDist = HitResult.Distance;
+//			ClosestHitActor = HitResult.GetActor();
+//		}
+//	}
+//	if (ClosestHitActor)
+//	{
+//		bHasLockTarget = true;
+//		LockedOnTarget = ClosestHitActor;
+//	}
+//	*/
+//}
+
+void AP4WCharacterBase::FindTarget()
+{
+	FVector MyLocation = GetActorLocation();
+	FVector MyForward = GetActorForwardVector();
+
+	float ViewAngleDegrees = 120.0f; // Ï†ÑÏ≤¥ ÏãúÏïºÍ∞Å (Ïòà: 60ÎèÑÎ©¥ Ï¢åÏö∞ 30ÎèÑÏî©)
+	float ViewRadius = 1000.0f;
+
+	// 1. Íµ¨Ï≤¥ Î≤îÏúÑ ÎÇ¥ Ïï°ÌÑ∞ Ï∞æÍ∏∞
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+
+	TArray<AActor*> IgnoredActors;
+	IgnoredActors.Add(this);
+
+	TArray<AActor*> OutActors;
+
+	bool bFound = UKismetSystemLibrary::SphereOverlapActors(
+		GetWorld(),
+		MyLocation,
+		ViewRadius,
+		ObjectTypes,
+		nullptr,             // ÌäπÏ†ï ÌÅ¥ÎûòÏä§Îßå Ï∞æÍ≥† Ïã∂ÏúºÎ©¥ Ïó¨Í∏∞Ïóê ÎÑ£Ïùå
+		IgnoredActors,
+		OutActors
+	);
+
+	// 2. Dot ProductÎ°ú ÏãúÏïºÍ∞Å ÌïÑÌÑ∞ÎßÅ
+	for (AActor* Actor : OutActors)
+	{
+		if (!Actor) continue;
+
+		FVector ToTarget = Actor->GetActorLocation() - MyLocation;
+		ToTarget.Normalize();
+
+		float Dot = FVector::DotProduct(MyForward, ToTarget); // ÏΩîÏÇ¨Ïù∏ Í∞í (1=Ï†ïÎ©¥, 0=ÏàòÏßÅ, -1=Î∞òÎåÄ)
+
+		float CosHalfFOV = FMath::Cos(FMath::DegreesToRadians(ViewAngleDegrees * 0.5f));
+
+		if (Dot >= CosHalfFOV)
+		{
+			// Ïù¥ Ïï°ÌÑ∞Îäî ÏãúÏïºÍ∞Å ÎÇ¥Ïóê ÏûàÏùå
+			UE_LOG(LogTemp, Warning, TEXT("ÏãúÏïº ÎÇ¥ Í∞êÏßÄ: %s"), *Actor->GetName());
+			HitActors.Add(Actor);
+		}
+	}
+
+	float BaseActorDist = 500.0f;
+	for (AActor* Actor : HitActors)
+	{
+		float ActorDist = FVector::Distance(MyLocation, Actor->GetActorLocation());
+		if (ActorDist < BaseActorDist)
+		{
+			HitTarget = Actor;
+		}
+		BaseActorDist = ActorDist;
+	}
+	HitActors.SetNum(0);
+
+	if (HitTarget)
+	{
+		UE_LOG(LogTemp, Log, TEXT("ÏµúÏ¢Ö ÌÉÄÍ≤ü Ïï°ÌÑ∞: %s"), *HitTarget->GetName());
+	}
+}
+
 
 //DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All)
 //{

@@ -73,6 +73,12 @@ protected:
 		float HitCheckTime
 	);
 
+	UFUNCTION(Server, Reliable)
+	void ServerRPCApplyDamage(const FHitResult& HitResult, float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
+	
+	UFUNCTION(Server, Reliable)
+	void ServerRPCApplyTargetDamage(AActor* Actor, float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
+
 protected:
 	//UPROPERTY()
 	//int32 ComboNum;
@@ -87,6 +93,7 @@ protected:
 	float AcceptCheckDistance = 300.0f;
 
 public:
+	// ÄðÅ¸ÀÓ
 	float CooldownTime;
 
 public:
@@ -120,4 +127,24 @@ protected:
 	float PrevTimerElapsed;
 	uint8 bCanNextCombo1 : 1;
 	uint8 bCanNextCombo2 : 1;
+
+	float PrevDamage;
+
+public:
+	// Sheltron
+	UPROPERTY(Replicated)
+	uint8 bIsSheltron : 1;
+
+// Cooldown Section
+protected:
+	FTimerHandle CooldownHandle_Combo1;
+	FTimerHandle CooldownHandle_Combo2;
+	FTimerHandle CooldownHandle_Combo3;
+
+	uint8 bCanPlayCombo1 : 1;
+	uint8 bCanPlayCombo2 : 1;
+	uint8 bCanPlayCombo3 : 1;
+
+protected:
+
 };
