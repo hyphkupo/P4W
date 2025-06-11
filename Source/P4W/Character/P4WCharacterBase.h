@@ -181,6 +181,6 @@ public:
 	TObjectPtr<class AActor> HitTarget;
 	TArray<class AActor*> HitActors;
 
-	void ConeDetectWithDotProduct();
+	//void ConeDetectWithDotProduct();
 
 };
