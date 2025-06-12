@@ -41,6 +41,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> FAttackAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> AnyKeyPressedAction;
+
 protected:
 	// skill
 	void AutoAttack(const FInputActionValue& Value);
@@ -51,6 +54,8 @@ protected:
 	void FireBallAttack(const FInputActionValue& Value);
 	void Manafont(const FInputActionValue& Value);
 
+	void AnyKeyPressed(const FInputActionValue& Value);
+
 protected:
 // Animation Montage
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
@@ -59,6 +64,7 @@ protected:
 protected:
 // Play AnimMontage
 	void PlayAutoAttackAnimation();
+	void PlayFireAttackAnimation(int32 Time);
 
 protected:
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
@@ -97,6 +103,12 @@ protected:
 	// 프로퍼티 리플리케이션 등록을 위한 함수 오버라이딩
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCFireAttack(int32 Time);
+	
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCFireAttack(int32 Time);
+
 	UPROPERTY(Replicated)
 	uint8 bIsInCombo : 1;
 
@@ -109,4 +121,13 @@ protected:
 public:
 	// 쿨타임
 	float CooldownTime;
+
+	// 캐스팅 시간
+	UPROPERTY(Replicated)
+	float CastingTime;
+
+protected:
+	bool CheckWasMappingKeyPressed();
+	uint8 bIsAnyKeyPressed : 1;
+	uint8 bIsCasting : 1;
 };

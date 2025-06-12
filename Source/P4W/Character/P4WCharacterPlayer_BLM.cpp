@@ -18,6 +18,7 @@
 #include "UI/P4WMpBarWidget.h"
 
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerInput.h"
 
 AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 {
@@ -58,6 +59,12 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 		FAttackAction = FAttackActionRef.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> AnyKeyPressedActionRef(TEXT("/Game/Input/IA_AnyKeyPressed.IA_AnyKeyPressed"));
+	if (AnyKeyPressedActionRef.Object)
+	{
+		AnyKeyPressedAction = AnyKeyPressedActionRef.Object;
+	}
+
 	// Animation Montage
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> FireAttackMontageRef(TEXT("/Game/Animation/AM_FireAttack.AM_FireAttack"));
 	if (FireAttackMontageRef.Object)
@@ -66,11 +73,36 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 	}
 
 	bReplicates = true;
+	bCanAttack = true;
+	bIsAnyKeyPressed = false;
+	bIsCasting = false;
+	CastingTime = 0.0f;
 }
 
 void AP4WCharacterPlayer_BLM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AP4WCharacterPlayer_BLM, CastingTime);
+}
+
+bool AP4WCharacterPlayer_BLM::CheckWasMappingKeyPressed()
+{
+	TArray<FInputAxisKeyMapping> axisMapping;
+	//UInputSettings::GetInputSettings()->GetAxisMappingByName(axisName, axisMapping);
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController)
+	{
+		for (auto axis : axisMapping)
+		{
+			if (PlayerController->WasInputKeyJustPressed(axis.Key))
+			{
+				return true;
+			}
+		}
+	}
+	
+	return false;
 }
 
 void AP4WCharacterPlayer_BLM::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -80,7 +112,7 @@ void AP4WCharacterPlayer_BLM::SetupPlayerInputComponent(UInputComponent* PlayerI
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 	if (EnhancedInputComponent)
 	{
-	// Attack Section
+		// Attack Section
 		EnhancedInputComponent->BindAction(AutoAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::AutoAttack);
 
 		EnhancedInputComponent->BindAction(Combo1AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::BlizzardAttack);
@@ -88,6 +120,8 @@ void AP4WCharacterPlayer_BLM::SetupPlayerInputComponent(UInputComponent* PlayerI
 		EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::ThunderAttack);
 		EnhancedInputComponent->BindAction(RAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::FireBallAttack);
 		EnhancedInputComponent->BindAction(FAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::Manafont);
+
+		EnhancedInputComponent->BindAction(AnyKeyPressedAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_BLM::AnyKeyPressed);
 	}
 }
 
@@ -99,17 +133,11 @@ void AP4WCharacterPlayer_BLM::AutoAttack(const FInputActionValue& Value)
 
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
 
-		//DisableInput(PlayerController);
-
-		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-
 		FTimerHandle Handle;
 		GetWorld()->GetTimerManager().SetTimer(
 			Handle,
 			FTimerDelegate::CreateLambda([&]()
 				{
-					//EnableInput(Cast<APlayerController>(GetController()));
-					//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 					bCanAttack = true;
 				}
 			), 1.5f, false
@@ -174,6 +202,8 @@ void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 // Damage: 180
 void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 {
+	CastingTime = 2.0f;
+
 	// 타겟이 없으면 공격 불가
 	if (!HitTarget)
 	{
@@ -185,27 +215,32 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 	}
 
 	Stat->ApplyUseMp(800.0f);
+	
+	if (bCanAttack)
+	{
+		CooldownTime = 2.5f;
 
-	//if (bCanAttack)
-	//{
-	//	bCanAttack = false;
-	//	ComboNum = 1;
+		bIsCasting = true;
 
-	//	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		//PlayFireAttackAnimation();
+		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
-	//	FTimerHandle Handle;
-	//	GetWorld()->GetTimerManager().SetTimer(
-	//		Handle,
-	//		FTimerDelegate::CreateLambda([&]()
-	//			{
-	//				bCanAttack = true;
-	//			}
-	//		), 2.0f, false
-	//	);
-	//	PlayComboAttackAnimation(ComboNum);
+		PlayFireAttackAnimation(CastingTime);
 
-	//	ServerRPCComboAttack(ComboNum);
-	//}
+		UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+
+		if (bIsCasting && bIsAnyKeyPressed)
+		{
+			UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+			//AnimInstance->StopAllMontages(0.5f);
+			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+			AnimInstance->Montage_Stop(0.0f, FireAttackMontage);
+
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		}
+
+		ServerRPCFireAttack(CastingTime);
+	}
 }
 
 // Cast: Instant, Cooldown time: 2.5s, MP Cost: 0MP, Range: 25y, Radius: 0y
@@ -290,6 +325,21 @@ void AP4WCharacterPlayer_BLM::FireBallAttack(const FInputActionValue& Value)
 void AP4WCharacterPlayer_BLM::Manafont(const FInputActionValue& Value)
 {
 	Stat->SetMpMax();
+}
+
+void AP4WCharacterPlayer_BLM::AnyKeyPressed(const FInputActionValue& Value)
+{
+	bIsAnyKeyPressed = true;
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				bIsAnyKeyPressed = false;
+			}
+		), 1.0f, false
+	);
 }
 
 void AP4WCharacterPlayer_BLM::PlayAutoAttackAnimation()
@@ -568,5 +618,53 @@ void AP4WCharacterPlayer_BLM::AttackHitCheck()
 				}
 			}
 		}
+	}
+}
+
+void AP4WCharacterPlayer_BLM::PlayFireAttackAnimation(int32 Time)
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->Montage_Play(FireAttackMontage);
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				bIsCasting = false;
+
+				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+				AnimInstance->Montage_JumpToSection(TEXT("CastingEnd"), FireAttackMontage);
+				//AnimInstance->Montage_Play(FireAttackMontage);
+
+				//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+			}
+		), Time, false
+	);
+
+	FTimerHandle MovementHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		MovementHandle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+			}
+		), Time + 0.5f, false
+	);
+	//AnimInstance->Montage_JumpToSection(ComboNumber, ComboAttackMontage);
+}
+
+void AP4WCharacterPlayer_BLM::ServerRPCFireAttack_Implementation(int32 Time)
+{
+	MulticastRPCFireAttack(Time);
+}
+
+void AP4WCharacterPlayer_BLM::MulticastRPCFireAttack_Implementation(int32 Time)
+{
+	if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
+	{
+		PlayFireAttackAnimation(Time);
 	}
 }
