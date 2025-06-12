@@ -38,6 +38,22 @@ float UP4WCharacterStatComponent::ApplyDamage(float InDamage)
 	return ActualDamage;
 }
 
+float UP4WCharacterStatComponent::ApplyUseMp(float UseMp)
+{
+	const float PrevMp = CurrentMp;
+	const float ActualMp = FMath::Clamp<float>(UseMp, 0, UseMp);
+	UE_LOG(LogTemp, Log, TEXT("UseMp: %f"), UseMp);
+
+	SetMp(PrevMp - ActualMp);
+
+	return ActualMp;
+}
+
+void UP4WCharacterStatComponent::SetMpMax()
+{
+	SetMp(MaxMp);
+}
+
 void UP4WCharacterStatComponent::SetHp(float NewHp)
 {
 	CurrentHp = FMath::Clamp(NewHp, 0.0f, BaseStat.MaxHp);
@@ -100,6 +116,8 @@ void UP4WCharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 	DOREPLIFETIME(UP4WCharacterStatComponent, CurrentHp);
 	DOREPLIFETIME(UP4WCharacterStatComponent, MaxHp);
+	DOREPLIFETIME(UP4WCharacterStatComponent, CurrentMp);
+	DOREPLIFETIME(UP4WCharacterStatComponent, MaxMp);
 	DOREPLIFETIME_CONDITION(UP4WCharacterStatComponent, BaseStat, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UP4WCharacterStatComponent, ModifierStat, COND_OwnerOnly);
 }

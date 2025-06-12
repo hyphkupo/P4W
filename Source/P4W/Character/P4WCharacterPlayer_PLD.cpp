@@ -27,7 +27,6 @@
 #include "InputMappingContext.h"
 #include "GameFramework/PlayerController.h"
 
-#include "Character/P4WPLDComboActionData.h"
 #include "GameFramework/Character.h"
 
 AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
@@ -84,6 +83,14 @@ AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 	bCanPlayCombo1 = true;
 	bCanPlayCombo2 = true;
 	bCanPlayCombo3 = true;
+}
+
+void AP4WCharacterPlayer_PLD::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AP4WCharacterPlayer_PLD, bIsInCombo);
+	DOREPLIFETIME(AP4WCharacterPlayer_PLD, bIsSheltron);
 }
 
 void AP4WCharacterPlayer_PLD::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -648,14 +655,6 @@ void AP4WCharacterPlayer_PLD::DrawDebugAttackRange(const FColor& DrawColor, FVec
 	DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(Forward).ToQuat(), DrawColor, false, 5.0f);
 
 #endif
-}
-
-void AP4WCharacterPlayer_PLD::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AP4WCharacterPlayer_PLD, bIsInCombo);
-	DOREPLIFETIME(AP4WCharacterPlayer_PLD, bIsSheltron);
 }
 
 void AP4WCharacterPlayer_PLD::ProcessComboCommand()

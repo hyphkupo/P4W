@@ -91,6 +91,12 @@ AP4WCharacterBase::AP4WCharacterBase()
 	{
 		TargetingAction = TargetingActionRef.Object;
 	}
+	
+	static ConstructorHelpers::FObjectFinder<UInputAction> CancelTargetingActionRef(TEXT("/Game/Input/IA_CancelTargeting.IA_CancelTargeting"));
+	if (CancelTargetingActionRef.Object)
+	{
+		CancelTargetingAction = CancelTargetingActionRef.Object;
+	}
 
 	// Animation
 	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimInstanceRef(TEXT("/Game/Animation/ABP_P4WCharacter1.ABP_P4WCharacter1_C"));
@@ -174,30 +180,6 @@ AP4WCharacterBase::AP4WCharacterBase()
 
 	// Skill Component
 	Skill = CreateDefaultSubobject<USkillSystemComponent>(TEXT("Skill"));
-
-	// Widget Component
-	//HpBar = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widget"));
-	//HpBar->SetRelativeLocation(FVector(0.0f, 0.0f, 80.0f));
-	
-	//static ConstructorHelpers::FClassFinder<UUserWidget> HpBarWidgetRef(TEXT("/Game/UI/WBP_HpBar.WBP_HpBar_C"));
-	//if (HpBarWidgetRef.Class)
-	//{
-	//	//HpBarWidget = CreateWidget<UUserWidget>(GetWorld(), HpBarWidgetRef.Class);
-	//	//HpBarWidget->AddToViewport();
-
-	//	HpBar->SetWidgetClass(HpBarWidgetRef.Class);
-	//	HpBar->SetWidgetSpace(EWidgetSpace::Screen);
-	//	HpBar->SetDrawSize(FVector2D(150.0f, 15.0f));
-	//	HpBar->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//}
-
-	//static ConstructorHelpers::FClassFinder<UP4WHpBarWidget> HpBarRef(TEXT("/Game/UI/WBP_HpBar.WBP_HpBar_C"));
-	//if (HpBarRef.Class)
-	//{
-	//	HpBarWidget = CreateWidget<UUserWidget>(GetWorld(), HpBarRef.Class);
-	//	//HpBar = HpBarRef.Object;
-	//	HpBarWidget->AddToViewport();
-	//}
 
 	bReplicates = true;
 	bCanAttack = true;
@@ -373,6 +355,7 @@ void AP4WCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 		// Targeting
 		EnhancedInputComponent->BindAction(TargetingAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Targeting);
+		EnhancedInputComponent->BindAction(CancelTargetingAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::CancelTargeting);
 	}
 }
 
@@ -428,6 +411,11 @@ void AP4WCharacterBase::Targeting(const FInputActionValue& Value)
 {
 	FindTarget();
 	//ConeDetectWithDotProduct();
+}
+
+void AP4WCharacterBase::CancelTargeting(const FInputActionValue& Value)
+{
+	HitTarget = nullptr;
 }
 
 void AP4WCharacterBase::PlayAutoAttackAnimation()

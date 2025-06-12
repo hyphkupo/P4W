@@ -95,6 +95,10 @@ public:
 
 	float ApplyDamage(float InDamage);
 
+	float ApplyUseMp(float UseMp);
+
+	void SetMpMax();
+
 protected:
 	//UPROPERTY()
 	//float MaxHp;

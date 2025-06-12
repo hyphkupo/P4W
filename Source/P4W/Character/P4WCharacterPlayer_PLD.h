@@ -100,7 +100,6 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	USkillSystemComponent* SkillSystem;
 
-
 protected:
 	// 프로퍼티 리플리케이션 등록을 위한 함수 오버라이딩
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

@@ -53,6 +53,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> TargetingAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> CancelTargetingAction;
 
 protected:
 // Called for input
@@ -65,6 +68,7 @@ protected:
 	void Zoom(const FInputActionValue& Value);
 
 	void Targeting(const FInputActionValue& Value);
+	void CancelTargeting(const FInputActionValue& Value);
 
 // Play AnimMontage
 	void PlayAutoAttackAnimation();
