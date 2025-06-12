@@ -87,6 +87,7 @@ protected:
 
 protected:
 	virtual void AttackHitCheck() override;
+	virtual void SpellHitCheck() override;
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	void DrawDebugAttackRange(const FColor& DrawColor, FVector TraceStart, FVector TraceEnd, FVector Forward);
 

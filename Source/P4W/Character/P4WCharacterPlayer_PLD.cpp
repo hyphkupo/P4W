@@ -637,6 +637,10 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 	}
 }
 
+void AP4WCharacterPlayer_PLD::SpellHitCheck()
+{
+}
+
 float AP4WCharacterPlayer_PLD::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);

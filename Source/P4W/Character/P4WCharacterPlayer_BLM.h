@@ -91,6 +91,7 @@ protected:
 
 protected:
 	virtual void AttackHitCheck() override;
+	virtual void SpellHitCheck() override;
 
 	void DrawDebugAttackRange(const FColor& DrawColor, FVector TraceStart, FVector TraceEnd, FVector Forward);
 
@@ -130,4 +131,9 @@ protected:
 	bool CheckWasMappingKeyPressed();
 	uint8 bIsAnyKeyPressed : 1;
 	uint8 bIsCasting : 1;
+	uint8 bIsUsingSkill : 1;
+
+public:
+	FTimerHandle CooldownHandle_FireAttack;
+	uint8 bCanPlayFireAttack : 1;
 };

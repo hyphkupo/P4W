@@ -77,6 +77,8 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 	bIsAnyKeyPressed = false;
 	bIsCasting = false;
 	CastingTime = 0.0f;
+
+	CurrentDamage = Stat->GetTotalStat().Attack;
 }
 
 void AP4WCharacterPlayer_BLM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -214,18 +216,33 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 		}
 	}
 
-	Stat->ApplyUseMp(800.0f);
 	
 	if (bCanAttack)
 	{
+		bIsUsingSkill = true;
 		CooldownTime = 2.5f;
+		CurrentDamage = 18.0f;
+		bCanAttack = false;
 
 		bIsCasting = true;
+		bCanPlayFireAttack = false;
+
+		Stat->ApplyUseMp(800.0f);
+
 
 		//PlayFireAttackAnimation();
 		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
 		PlayFireAttackAnimation(CastingTime);
+
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_FireAttack,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayFireAttack = true;
+				}
+			), CooldownTime, false
+		);
 
 		UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
 
@@ -494,7 +511,7 @@ void AP4WCharacterPlayer_BLM::AttackHitCheck()
 			{
 				FDamageEvent DamageEvent;
 				float CurrentAttackDamage;
-				if (bIsInCombo)
+				if (bIsCasting)
 				{
 					CurrentAttackDamage = CurrentDamage;
 				}
@@ -518,7 +535,7 @@ void AP4WCharacterPlayer_BLM::AttackHitCheck()
 			{
 				//ServerRPCNotifyHit(OutHitResult, HitCheckTime);
 				float CurrentAttackDamage;
-				if (bIsInCombo)
+				if (bIsCasting)
 				{
 					CurrentAttackDamage = CurrentDamage;
 				}
@@ -561,13 +578,15 @@ void AP4WCharacterPlayer_BLM::AttackHitCheck()
 			{
 				FDamageEvent DamageEvent;
 				float CurrentAttackDamage;
-				if (bIsInCombo)
+				if (bIsCasting)
 				{
 					CurrentAttackDamage = CurrentDamage;
 				}
 				else
 				{
 					CurrentAttackDamage = Stat->GetTotalStat().Attack;
+					//CurrentAttackDamage = CurrentDamage;
+
 				}
 
 				//AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
@@ -588,7 +607,7 @@ void AP4WCharacterPlayer_BLM::AttackHitCheck()
 				if (HasAuthority())
 				{
 					float CurrentAttackDamage;
-					if (bIsInCombo)
+					if (bIsCasting)
 					{
 						CurrentAttackDamage = CurrentDamage;
 					}
@@ -610,11 +629,113 @@ void AP4WCharacterPlayer_BLM::AttackHitCheck()
 					//	}
 					//	else
 					//	{
-							OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+					OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
 					//	}
 					//}
 					//UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), CurrentAttackDamage);
 
+				}
+			}
+		}
+	}
+}
+
+void AP4WCharacterPlayer_BLM::SpellHitCheck()
+{
+	if (IsLocallyControlled())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[%s]CurrentDamage: %f"), LOG_NETMODEINFO, CurrentDamage);
+
+		FHitResult OutHitResult;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
+
+		const float AttackRange = Stat->GetTotalStat().AttackRange;
+		const float AttackRadius = Stat->GetAttackRadius();
+		const float AttackDamage = Stat->GetTotalStat().Attack;
+		const FVector Forward = GetActorForwardVector();
+		const FVector Start = GetActorLocation() + Forward * GetCapsuleComponent()->GetScaledCapsuleRadius();
+		const FVector End = Start + GetActorForwardVector() * AttackRange;
+
+		bool HitDetected = GetWorld()->SweepSingleByChannel(OutHitResult, Start, End, FQuat::Identity, CCHANNEL_P4WACTION, FCollisionShape::MakeSphere(AttackRadius), Params);
+
+		float HitCheckTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+		if (!HasAuthority())
+		{
+			// @Todo: 원거리 공격
+			if (HitTarget)
+			{
+				FDamageEvent DamageEvent;
+				float CurrentAttackDamage;
+				if (bIsUsingSkill)
+				{
+					CurrentAttackDamage = CurrentDamage;
+				}
+				else
+				{
+					CurrentAttackDamage = Stat->GetTotalStat().Attack;
+				}
+
+				ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage, DamageEvent, GetController(), this);
+			}
+
+			if (HitDetected)
+			{
+				float CurrentAttackDamage;
+				
+				if (bIsUsingSkill)
+				{
+					CurrentAttackDamage = CurrentDamage;
+				}
+				else
+				{
+					CurrentAttackDamage = Stat->GetTotalStat().Attack;
+				}
+
+				FDamageEvent DamageEvent;
+
+				ServerRPCApplyDamage(OutHitResult, CurrentAttackDamage, DamageEvent, GetController(), this);
+
+				UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), CurrentAttackDamage);
+			}
+			else
+			{
+				ServerRPCNotifyMiss(Start, End, Forward, HitCheckTime);
+			}
+		}
+		else
+		{
+			if (HitTarget)
+			{
+				FDamageEvent DamageEvent;
+				float CurrentAttackDamage;
+				if (bIsUsingSkill)
+				{
+					CurrentAttackDamage = CurrentDamage;
+				}
+				else
+				{
+					CurrentAttackDamage = Stat->GetTotalStat().Attack;
+				}
+
+				HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+			}
+
+			FColor DebugColor = HitDetected ? FColor::Green : FColor::Red;
+			if (HitDetected)
+			{
+				if (HasAuthority())
+				{
+					float CurrentAttackDamage;
+					if (bIsUsingSkill)
+					{
+						CurrentAttackDamage = CurrentDamage;
+					}
+					else
+					{
+						CurrentAttackDamage = Stat->GetTotalStat().Attack;
+					}
+					FDamageEvent DamageEvent;
+					OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
 				}
 			}
 		}
@@ -650,6 +771,8 @@ void AP4WCharacterPlayer_BLM::PlayFireAttackAnimation(int32 Time)
 		FTimerDelegate::CreateLambda([&]()
 			{
 				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+				bIsUsingSkill = false;
+				bCanAttack = true;
 			}
 		), Time + 0.5f, false
 	);
