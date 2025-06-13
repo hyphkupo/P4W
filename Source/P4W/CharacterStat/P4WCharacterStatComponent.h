@@ -10,8 +10,11 @@
 DECLARE_MULTICAST_DELEGATE(FOnHpZeroDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnMpZeroDelegate);
 
+DECLARE_MULTICAST_DELEGATE(FOnExpMaxDelegate);
+
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHpChangedDelegate, float /*CurrentHp*/, float /*MaxHp*/);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnMpChangedDelegate, float /*CurrentMp*/, float /*MaxMp*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnExpChangedDelegate, float /*CurrentExp*/, float /*MaxExp*/);
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStatChangedDelegate, const FP4WCharacterStat& /*BaseStat*/, const FP4WCharacterStat& /*ModifierStat*/);
 
@@ -63,8 +66,11 @@ public:
 	FOnHpZeroDelegate OnHpZero;
 	FOnMpZeroDelegate OnMpZero;
 
+	FOnExpMaxDelegate OnExpMax;
+
 	FOnHpChangedDelegate OnHpChanged;
 	FOnMpChangedDelegate OnMpChanged;
+	FOnExpChangedDelegate OnExpChanged;
 
 	FOnStatChangedDelegate OnStatChanged;
 

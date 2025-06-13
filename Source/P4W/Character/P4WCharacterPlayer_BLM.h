@@ -58,13 +58,24 @@ protected:
 
 protected:
 // Animation Montage
+	// Blizzard, Fire Attack 공유
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> FireAttackMontage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAnimMontage> FireBallAttackMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAnimMontage> ManafontMontage;
 
 protected:
 // Play AnimMontage
 	void PlayAutoAttackAnimation();
+	void PlayBlizzardAttackAnimation(int32 Time);
 	void PlayFireAttackAnimation(int32 Time);
+	void PlayThunderAttackAnimation(int32 Time);
+	void PlayFireBallAttackAnimation(int32 Time);
+	void PlayManafontAnimation(int32 Time);
 
 protected:
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
@@ -104,11 +115,41 @@ protected:
 	// 프로퍼티 리플리케이션 등록을 위한 함수 오버라이딩
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+// RPC
+	// Blizzard Attack
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCBlizzardAttack(int32 Time);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCBlizzardAttack(int32 Time);
+
+	// Fire Attack
 	UFUNCTION(Server, Unreliable)
 	void ServerRPCFireAttack(int32 Time);
 	
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastRPCFireAttack(int32 Time);
+
+	// Thunder Attack
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCThunderAttack(int32 Time, float DoTDuration, float DoTPotency);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCThunderAttack(int32 Time, float DoTDuration, float DoTPotency);
+
+	// FireBall Attack
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCFireBallAttack(int32 Time);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCFireBallAttack(int32 Time);
+
+	// Manafont
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCManafont(int32 Time);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCManafont(int32 Time);
 
 	UPROPERTY(Replicated)
 	uint8 bIsInCombo : 1;
@@ -127,6 +168,13 @@ public:
 	UPROPERTY(Replicated)
 	float CastingTime;
 
+	// DoT
+	// 도트 지속 시간
+	float DotTime;
+
+	// 도트 딜
+	float Potency;
+
 protected:
 	bool CheckWasMappingKeyPressed();
 	uint8 bIsAnyKeyPressed : 1;
@@ -134,6 +182,16 @@ protected:
 	uint8 bIsUsingSkill : 1;
 
 public:
+	FTimerHandle CooldownHandle_BlizzardAttack;
 	FTimerHandle CooldownHandle_FireAttack;
+	FTimerHandle CooldownHandle_ThunderAttack;
+	FTimerHandle CooldownHandle_FireBallAttack;
+	FTimerHandle CooldownHandle_Manafont;
+
+	uint8 bCanPlayBlizzardAttack : 1;
 	uint8 bCanPlayFireAttack : 1;
+	uint8 bCanPlayThunderAttack : 1;
+	uint8 bCanPlayFireBallAttack : 1;
+	uint8 bCanPlayManafont : 1;
+
 };

@@ -118,6 +118,8 @@ void UP4WCharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 	DOREPLIFETIME(UP4WCharacterStatComponent, MaxHp);
 	DOREPLIFETIME(UP4WCharacterStatComponent, CurrentMp);
 	DOREPLIFETIME(UP4WCharacterStatComponent, MaxMp);
+	DOREPLIFETIME(UP4WCharacterStatComponent, CurrentExp);
+	DOREPLIFETIME(UP4WCharacterStatComponent, MaxExp);
 	DOREPLIFETIME_CONDITION(UP4WCharacterStatComponent, BaseStat, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UP4WCharacterStatComponent, ModifierStat, COND_OwnerOnly);
 }
@@ -164,6 +166,12 @@ void UP4WCharacterStatComponent::OnRep_CurrentMp()
 
 void UP4WCharacterStatComponent::OnRep_CurrentExp()
 {
+	OnExpChanged.Broadcast(CurrentExp, MaxExp);
+
+	if (CurrentExp >= MaxExp)
+	{
+		OnExpMax.Broadcast();
+	}
 }
 
 void UP4WCharacterStatComponent::OnRep_MaxHp()
@@ -178,7 +186,7 @@ void UP4WCharacterStatComponent::OnRep_MaxMp()
 
 void UP4WCharacterStatComponent::OnRep_MaxExp()
 {
-	//OnExpChanged.Broadcast(CurrentHp, MaxExp);
+	OnExpChanged.Broadcast(CurrentExp, MaxExp);
 }
 
 void UP4WCharacterStatComponent::OnRep_BaseStat()
@@ -199,6 +207,7 @@ void UP4WCharacterStatComponent::SetLevelStat(int32 InNewLevel)
 	BaseStat = UP4WGameSingleton::Get().GetCharacterStat(CurrentLevel);
 	check(BaseStat.MaxHp > 0.0f);
 	check(BaseStat.MaxMp > 0.0f);
+	check(BaseStat.MaxExp > 0.0f);
 }
 
 void UP4WCharacterStatComponent::ResetStat()

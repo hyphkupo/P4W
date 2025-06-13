@@ -71,6 +71,18 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 	{
 		FireAttackMontage = FireAttackMontageRef.Object;
 	}
+	
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> FireBallAttackMontageRef(TEXT("/Game/Animation/AM_FireBallAttack.AM_FireBallAttack"));
+	if (FireBallAttackMontageRef.Object)
+	{
+		FireBallAttackMontage = FireBallAttackMontageRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ManafontMontageRef(TEXT("/Game/Animation/AM_Manafont.AM_Manafont"));
+	if (ManafontMontageRef.Object)
+	{
+		ManafontMontage = ManafontMontageRef.Object;
+	}
 
 	bReplicates = true;
 	bCanAttack = true;
@@ -79,6 +91,12 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 	CastingTime = 0.0f;
 
 	CurrentDamage = Stat->GetTotalStat().Attack;
+
+	bCanPlayBlizzardAttack = true;
+	bCanPlayFireAttack = true;
+	bCanPlayThunderAttack = true;
+	bCanPlayFireBallAttack = true;
+	bCanPlayManafont = true;
 }
 
 void AP4WCharacterPlayer_BLM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -154,6 +172,8 @@ void AP4WCharacterPlayer_BLM::AutoAttack(const FInputActionValue& Value)
 // Damage: 180
 void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 {
+	CastingTime = 2.0f;
+
 	// 타겟이 없으면 공격 불가
 	if (!HitTarget)
 	{
@@ -162,42 +182,45 @@ void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("공격할 대상이 없습니다"));
 			return;
 		}
-
-		//APlayerController* PlayerController = Cast<APlayerController>(GetController());
-		//if (PlayerController)
-		//{
-		//	PlayerController->ClientMessage(TEXT("공격할 대상이 없습니다"));
-		//	return;
-		//}
 	}
 
-	Stat->ApplyUseMp(600.0f);
+	if (bCanAttack && bCanPlayBlizzardAttack)
+	{
+		bIsUsingSkill = true;
+		CooldownTime = 2.5f;
+		CurrentDamage = 15.0f;
+		bCanAttack = false;
 
-	// 애니메이션 재생
-	// 2초 전에 다른 입력을 받으면 애니메이션 정지
-	// 재생 후 2초가 지나면(그 안에 다른 입력을 받지 않으면) 노티파이 이용해서 공격, 이펙트 재생, 대미지 적용
+		bIsCasting = true;
+		bCanPlayBlizzardAttack = false;
 
-	//if (bCanAttack)
-	//{
-	//	bCanAttack = false;
+		Stat->ApplyUseMp(400.0f);
 
-	//	// 2초 후 대미지 줌, 공격 이펙트 재생
+		PlayFireAttackAnimation(CastingTime);
 
-	//	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_BlizzardAttack,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayBlizzardAttack = true;
+				}
+			), CooldownTime, false
+		);
 
-	//	FTimerHandle Handle;
-	//	GetWorld()->GetTimerManager().SetTimer(
-	//		Handle,
-	//		FTimerDelegate::CreateLambda([&]()
-	//			{
-	//				bCanAttack = true;
-	//			}
-	//		), 2.0f, false
-	//	);
-	//	PlayComboAttackAnimation(ComboNum);
+		UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
 
-	//	ServerRPCComboAttack(ComboNum);
-	//}
+		if (bIsCasting && bIsAnyKeyPressed)
+		{
+			UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+			//AnimInstance->StopAllMontages(0.5f);
+			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+			AnimInstance->Montage_Stop(0.0f, FireAttackMontage);		// 수정
+
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		}
+
+		ServerRPCFireAttack(CastingTime);
+	}
 }
 
 // Cast: 2s, Cooldown time: 2.5s, MP Cost: 800MP, Range: 25y, Radius: 0y
@@ -216,8 +239,7 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 		}
 	}
 
-	
-	if (bCanAttack)
+	if (bCanAttack && bCanPlayFireAttack)
 	{
 		bIsUsingSkill = true;
 		CooldownTime = 2.5f;
@@ -228,7 +250,6 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 		bCanPlayFireAttack = false;
 
 		Stat->ApplyUseMp(800.0f);
-
 
 		//PlayFireAttackAnimation();
 		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
@@ -264,6 +285,8 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 // Damage: 100, Potency: 45, Duration: 24s
 void AP4WCharacterPlayer_BLM::ThunderAttack(const FInputActionValue& Value)
 {
+	CastingTime = 0.0f;
+
 	// 타겟이 없으면 공격 불가
 	if (!HitTarget)
 	{
@@ -274,27 +297,44 @@ void AP4WCharacterPlayer_BLM::ThunderAttack(const FInputActionValue& Value)
 		}
 	}
 
+	if (bCanAttack && bCanPlayThunderAttack)
+	{
+		bIsUsingSkill = true;
+		CooldownTime = 2.5f;
+		CurrentDamage = 10.0f;
+		bCanAttack = false;
 
-	//if (bCanAttack)
-	//{
-	//	bCanAttack = false;
-	//	ComboNum = 1;
+		DotTime = 24.0f;
+		Potency = 4.5f;
 
-	//	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		bIsCasting = true;
+		bCanPlayThunderAttack = false;
 
-	//	//FTimerHandle Handle;
-	//	//GetWorld()->GetTimerManager().SetTimer(
-	//	//	Handle,
-	//	//	FTimerDelegate::CreateLambda([&]()
-	//	//		{
-	//	//			bCanAttack = true;
-	//	//		}
-	//	//	), 2.0f, false
-	//	//);
-	//	PlayComboAttackAnimation(ComboNum);
+		PlayThunderAttackAnimation(CastingTime);
 
-	//	ServerRPCComboAttack(ComboNum);
-	//}
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_ThunderAttack,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayThunderAttack = true;
+				}
+			), CooldownTime, false
+		);
+
+		UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+
+		if (bIsCasting && bIsAnyKeyPressed)
+		{
+			UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+			//AnimInstance->StopAllMontages(0.5f);
+			//UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+			//AnimInstance->Montage_Stop(0.0f, FireAttackMontage);
+
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		}
+
+		ServerRPCThunderAttack(CastingTime, DotTime, Potency);
+	}
 }
 
 // RAttackAction
@@ -302,6 +342,8 @@ void AP4WCharacterPlayer_BLM::ThunderAttack(const FInputActionValue& Value)
 // Damage: 300
 void AP4WCharacterPlayer_BLM::FireBallAttack(const FInputActionValue& Value)
 {
+	CastingTime = 3.5f;
+
 	// 타겟이 없으면 공격 불가
 	if (!HitTarget)
 	{
@@ -312,28 +354,43 @@ void AP4WCharacterPlayer_BLM::FireBallAttack(const FInputActionValue& Value)
 		}
 	}
 
-	Stat->ApplyUseMp(800.0f);
+	if (bCanAttack)
+	{
+		bIsUsingSkill = true;
+		CooldownTime = 2.5f;
+		CurrentDamage = 30.0f;
+		bCanAttack = false;
 
-	//if (bCanAttack)
-	//{
-	//	bCanAttack = false;
-	//	ComboNum = 1;
+		bIsCasting = true;
+		bCanPlayFireBallAttack = false;
 
-	//	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		Stat->ApplyUseMp(800.0f);
 
-	//	FTimerHandle Handle;
-	//	GetWorld()->GetTimerManager().SetTimer(
-	//		Handle,
-	//		FTimerDelegate::CreateLambda([&]()
-	//			{
-	//				bCanAttack = true;
-	//			}
-	//		), 2.5f, false
-	//	);
-	//	PlayComboAttackAnimation(ComboNum);
+		PlayFireBallAttackAnimation(CastingTime);
 
-	//	ServerRPCComboAttack(ComboNum);
-	//}
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_FireBallAttack,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayFireBallAttack = true;
+				}
+			), CooldownTime, false
+		);
+
+		UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+
+		if (bIsCasting && bIsAnyKeyPressed)
+		{
+			UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+			//AnimInstance->StopAllMontages(0.5f);
+			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+			AnimInstance->Montage_Stop(0.0f, FireBallAttackMontage);
+
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		}
+
+		ServerRPCFireBallAttack(CastingTime);
+	}
 }
 
 // FAttackAction
@@ -341,7 +398,42 @@ void AP4WCharacterPlayer_BLM::FireBallAttack(const FInputActionValue& Value)
 // Fully restores MP.
 void AP4WCharacterPlayer_BLM::Manafont(const FInputActionValue& Value)
 {
-	Stat->SetMpMax();
+	CastingTime = 0.0f;
+	CooldownTime = 120.0f;
+
+	if (bCanAttack && bCanPlayManafont)
+	{
+		Stat->SetMpMax();
+
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		
+		bIsUsingSkill = true;
+
+		bIsCasting = true;
+		bCanPlayManafont = false;
+
+		PlayManafontAnimation(CastingTime);
+
+		// ManafontMontage
+		//GetMesh()->PlayAnimation(ManafontAnimation, false);
+		
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_Manafont,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayManafont = true;
+				}
+			), CooldownTime, false
+		);
+
+		ServerRPCManafont(CastingTime);
+	}
+
+	else
+	{
+		float ElapsedTime = GetWorldTimerManager().GetTimerElapsed(CooldownHandle_Manafont);
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, FString::Printf(TEXT("마나샘 쿨타임 도는 중 ... (%f / %f)"), ElapsedTime, CooldownTime));
+	}
 }
 
 void AP4WCharacterPlayer_BLM::AnyKeyPressed(const FInputActionValue& Value)
@@ -742,6 +834,43 @@ void AP4WCharacterPlayer_BLM::SpellHitCheck()
 	}
 }
 
+void AP4WCharacterPlayer_BLM::PlayBlizzardAttackAnimation(int32 Time)
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->Montage_Play(FireAttackMontage);
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				bIsCasting = false;
+
+				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+				AnimInstance->Montage_JumpToSection(TEXT("CastingEnd"), FireAttackMontage);
+				//AnimInstance->Montage_Play(FireAttackMontage);
+
+				//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+			}
+		), Time, false
+	);
+
+	FTimerHandle MovementHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		MovementHandle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+				bIsUsingSkill = false;
+				bCanAttack = true;
+			}
+		), Time + 0.5f, false
+	);
+	//AnimInstance->Montage_JumpToSection(ComboNumber, ComboAttackMontage);
+}
+
 void AP4WCharacterPlayer_BLM::PlayFireAttackAnimation(int32 Time)
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
@@ -779,6 +908,67 @@ void AP4WCharacterPlayer_BLM::PlayFireAttackAnimation(int32 Time)
 	//AnimInstance->Montage_JumpToSection(ComboNumber, ComboAttackMontage);
 }
 
+void AP4WCharacterPlayer_BLM::PlayThunderAttackAnimation(int32 Time)
+{
+}
+
+void AP4WCharacterPlayer_BLM::PlayFireBallAttackAnimation(int32 Time)
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->Montage_Play(FireBallAttackMontage);
+
+	FTimerHandle Handle;
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				bIsCasting = false;
+
+				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+				AnimInstance->Montage_JumpToSection(TEXT("CastingEnd"), FireBallAttackMontage);
+				//AnimInstance->Montage_Play(FireAttackMontage);
+
+				//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+			}
+		), Time, false
+	);
+
+	FTimerHandle MovementHandle;
+	GetWorld()->GetTimerManager().SetTimer(
+		MovementHandle,
+		FTimerDelegate::CreateLambda([&]()
+			{
+				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+				bIsUsingSkill = false;
+				bCanAttack = true;
+			}
+		), Time + 0.5f, false
+	);
+	//AnimInstance->Montage_JumpToSection(ComboNumber, ComboAttackMontage);
+}
+
+void AP4WCharacterPlayer_BLM::PlayManafontAnimation(int32 Time)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->Montage_Play(ManafontMontage);
+}
+
+// RPC
+void AP4WCharacterPlayer_BLM::ServerRPCBlizzardAttack_Implementation(int32 Time)
+{
+	MulticastRPCBlizzardAttack(Time);
+}
+
+void AP4WCharacterPlayer_BLM::MulticastRPCBlizzardAttack_Implementation(int32 Time)
+{
+	if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
+	{
+		PlayBlizzardAttackAnimation(Time);
+	}
+}
+
 void AP4WCharacterPlayer_BLM::ServerRPCFireAttack_Implementation(int32 Time)
 {
 	MulticastRPCFireAttack(Time);
@@ -789,5 +979,44 @@ void AP4WCharacterPlayer_BLM::MulticastRPCFireAttack_Implementation(int32 Time)
 	if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
 	{
 		PlayFireAttackAnimation(Time);
+	}
+}
+
+void AP4WCharacterPlayer_BLM::ServerRPCThunderAttack_Implementation(int32 Time, float DoTDuration, float DoTPotency)
+{
+	MulticastRPCThunderAttack(Time, DoTDuration, DoTPotency);
+}
+
+void AP4WCharacterPlayer_BLM::MulticastRPCThunderAttack_Implementation(int32 Time, float DoTDuration, float DoTPotency)
+{
+	if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
+	{
+		PlayThunderAttackAnimation(Time);
+	}
+}
+
+void AP4WCharacterPlayer_BLM::ServerRPCFireBallAttack_Implementation(int32 Time)
+{
+	MulticastRPCFireBallAttack(Time);
+}
+
+void AP4WCharacterPlayer_BLM::MulticastRPCFireBallAttack_Implementation(int32 Time)
+{
+	if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
+	{
+		PlayFireBallAttackAnimation(Time);
+	}
+}
+
+void AP4WCharacterPlayer_BLM::ServerRPCManafont_Implementation(int32 Time)
+{
+	MulticastRPCManafont(Time);
+}
+
+void AP4WCharacterPlayer_BLM::MulticastRPCManafont_Implementation(int32 Time)
+{
+	if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
+	{
+		PlayManafontAnimation(Time);
 	}
 }
