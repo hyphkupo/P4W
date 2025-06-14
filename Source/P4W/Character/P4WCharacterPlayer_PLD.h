@@ -88,6 +88,7 @@ protected:
 protected:
 	virtual void AttackHitCheck() override;
 	virtual void SpellHitCheck() override;
+	virtual void SpellHitCheckDoT() override;
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	void DrawDebugAttackRange(const FColor& DrawColor, FVector TraceStart, FVector TraceEnd, FVector Forward);
 
@@ -146,5 +147,24 @@ protected:
 	uint8 bCanPlayCombo3 : 1;
 
 protected:
+	float CastingTime;
+	uint8 bIsUsingSkill : 1;
+	uint8 bIsCasting : 1;
+	uint8 bCanPlayHealUp : 1;
 
+	FTimerHandle CooldownHandle_HealUp;
+
+	void PlayHealUpAnimation(int32 Time);
+
+	// HealUp
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCHealUp(int32 Time);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCHealUp(int32 Time);
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAnimMontage> HealUpMontage;
+	
 };

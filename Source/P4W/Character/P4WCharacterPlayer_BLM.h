@@ -61,7 +61,10 @@ protected:
 	// Blizzard, Fire Attack 공유
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> FireAttackMontage;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAnimMontage> ThunderAttackMontage;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> FireBallAttackMontage;
 
@@ -103,6 +106,7 @@ protected:
 protected:
 	virtual void AttackHitCheck() override;
 	virtual void SpellHitCheck() override;
+	virtual void SpellHitCheckDoT() override;
 
 	void DrawDebugAttackRange(const FColor& DrawColor, FVector TraceStart, FVector TraceEnd, FVector Forward);
 
@@ -194,4 +198,25 @@ public:
 	uint8 bCanPlayFireBallAttack : 1;
 	uint8 bCanPlayManafont : 1;
 
+protected:
+	//// 타겟 해제 방지용
+	//UPROPERTY()
+	//TObjectPtr<class AActor> DotHitTarget;
+	
+	TArray<FTimerHandle> DotHandle;
+	uint32 TimerNum = 0;
+
+	void RepeatingFunction();
+
+	void CountRepeatingCall(FTimerHandle Handle, uint32* Num);
+	//uint32 RepeatingNum;
+
+	FTimerHandle DotManagerHandle;
+	FTimerHandle DurationHandle;
+
+
+	UFUNCTION()
+	void RepeatingDamage(uint32 Num);
+
+	uint8 bIsThunder : 1;
 };

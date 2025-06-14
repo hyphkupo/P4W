@@ -71,6 +71,12 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 	{
 		FireAttackMontage = FireAttackMontageRef.Object;
 	}
+
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ThunderAttackMontageRef(TEXT("/Game/Animation/AM_ThunderAttack.AM_ThunderAttack"));
+	if (ThunderAttackMontageRef.Object)
+	{
+		ThunderAttackMontage = ThunderAttackMontageRef.Object;
+	}
 	
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> FireBallAttackMontageRef(TEXT("/Game/Animation/AM_FireBallAttack.AM_FireBallAttack"));
 	if (FireBallAttackMontageRef.Object)
@@ -299,16 +305,16 @@ void AP4WCharacterPlayer_BLM::ThunderAttack(const FInputActionValue& Value)
 
 	if (bCanAttack && bCanPlayThunderAttack)
 	{
-		bIsUsingSkill = true;
 		CooldownTime = 2.5f;
 		CurrentDamage = 10.0f;
-		bCanAttack = false;
 
 		DotTime = 24.0f;
 		Potency = 4.5f;
 
 		bIsCasting = true;
 		bCanPlayThunderAttack = false;
+
+		bIsThunder = true;
 
 		PlayThunderAttackAnimation(CastingTime);
 
@@ -320,6 +326,12 @@ void AP4WCharacterPlayer_BLM::ThunderAttack(const FInputActionValue& Value)
 				}
 			), CooldownTime, false
 		);
+
+		if (bIsThunder)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(DotManagerHandle);
+			GetWorld()->GetTimerManager().ClearTimer(DurationHandle);
+		}
 
 		UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
 
@@ -834,6 +846,255 @@ void AP4WCharacterPlayer_BLM::SpellHitCheck()
 	}
 }
 
+void AP4WCharacterPlayer_BLM::SpellHitCheckDoT()
+{
+	if (IsLocallyControlled())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[%s]CurrentDamage: %f"), LOG_NETMODEINFO, CurrentDamage);
+
+		FHitResult OutHitResult;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(Attack), false, this);
+
+		const float AttackRange = Stat->GetTotalStat().AttackRange;
+		const float AttackRadius = Stat->GetAttackRadius();
+		const float AttackDamage = Stat->GetTotalStat().Attack;
+		const FVector Forward = GetActorForwardVector();
+		const FVector Start = GetActorLocation() + Forward * GetCapsuleComponent()->GetScaledCapsuleRadius();
+		const FVector End = Start + GetActorForwardVector() * AttackRange;
+
+		bool HitDetected = GetWorld()->SweepSingleByChannel(OutHitResult, Start, End, FQuat::Identity, CCHANNEL_P4WACTION, FCollisionShape::MakeSphere(AttackRadius), Params);
+
+		float HitCheckTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+		if (!HasAuthority())
+		{
+			// @Todo: 원거리 공격
+			if (HitTarget)
+			{
+				FDamageEvent DamageEvent;
+				float CurrentAttackDamage;
+				CurrentAttackDamage = CurrentDamage;
+				HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+
+				ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage, DamageEvent, GetController(), this);
+
+				//FTimerHandle DoTHandle;
+				//uint32 Duration = DotTime;
+				
+				//FTimerHandle DurationHandle;
+				//FTimerHandle DelayHandle;
+
+				// 타겟 해제 방지용
+				DotHitTarget = HitTarget;
+
+				//RepeatingFunction();
+
+
+				//GetWorld()->GetTimerManager().SetTimer(
+				//	DotManagerHandle,
+				//	FTimerDelegate::CreateLambda([&]()  // [=] 값 캡처
+				//		{
+				//			//ServerRPCApplyTargetDamage(DotHitTarget, Potency, DamageEvent, GetController(), this);
+				//			RepeatingDamage();
+				//		}
+				//	), 1.0f, true, 1.0f
+				//);
+				
+
+				FTimerHandle DummyHandle;
+				DotHandle.Add(DummyHandle);
+
+				uint32 Num = TimerNum;
+				FTimerDelegate TimerDel;
+				TimerDel.BindUFunction(this, FName("RepeatingDamage"), Num);
+
+				GetWorld()->GetTimerManager().SetTimer(DotManagerHandle, TimerDel, 1.0f, true, 1.0f);
+				++TimerNum;
+
+				GetWorld()->GetTimerManager().SetTimer(
+					DurationHandle,
+					FTimerDelegate::CreateLambda([&]()
+						{
+							GetWorld()->GetTimerManager().ClearTimer(DotManagerHandle);
+							bIsThunder = false;
+						}
+					), 5.0f, false
+				);
+
+				//GetWorld()->GetTimerManager().SetTimer(
+				//	DurationHandle,
+				//	FTimerDelegate::CreateLambda([&]()  // [=] 값 캡처
+				//		{
+				//			GetWorld()->GetTimerManager().ClearTimer(DotHandle[TimerNum - 1]);
+				//		}
+				//	), 5.0f, false
+				//);
+
+				//GetWorld()->GetTimerManager().SetTimer(
+				//	DoTHandle,
+				//	FTimerDelegate::CreateLambda([&]()
+				//		{
+				//			GetWorldTimerManager().ClearTimer(DoTHandle);
+				//		}
+				//	), 3.0f, false
+				//);
+			}
+
+			if (HitDetected)
+			{
+				float CurrentAttackDamage;
+
+				if (bIsUsingSkill)
+				{
+					CurrentAttackDamage = CurrentDamage;
+				}
+				else
+				{
+					CurrentAttackDamage = Stat->GetTotalStat().Attack;
+				}
+
+				FDamageEvent DamageEvent;
+
+				ServerRPCApplyDamage(OutHitResult, CurrentAttackDamage, DamageEvent, GetController(), this);
+
+				UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), CurrentAttackDamage);
+			}
+			else
+			{
+				ServerRPCNotifyMiss(Start, End, Forward, HitCheckTime);
+			}
+		}
+		else
+		{
+			if (HitTarget)
+			{
+				FDamageEvent DamageEvent;
+				float CurrentAttackDamage;
+				CurrentAttackDamage = CurrentDamage;
+				HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+
+				//FTimerHandle DoTHandle;
+				uint32 Duration = DotTime;
+				//FTimerHandle DelayHandle;
+
+				// 타겟 해제 방지용
+				DotHitTarget = HitTarget;
+
+				//FTimerHandle DotManagerHandle;
+
+				//GetWorld()->GetTimerManager().SetTimer(
+				//	DotManagerHandle,
+				//	FTimerDelegate::CreateLambda([&]()  // [=] 값 캡처
+				//		{
+				//			//ServerRPCApplyTargetDamage(DotHitTarget, Potency, DamageEvent, GetController(), this);
+				//			RepeatingDamage();
+				//		}
+				//	), 1.0f, true, 1.0f
+				//);
+
+				FTimerHandle DummyHandle;
+				DotHandle.Add(DummyHandle);
+
+				uint32 Num = TimerNum;
+				FTimerDelegate TimerDel;
+				TimerDel.BindUFunction(this, FName("RepeatingDamage"), Num);
+
+				GetWorld()->GetTimerManager().SetTimer(DotManagerHandle, TimerDel, 1.0f, true, 1.0f);
+				++TimerNum;
+
+				GetWorld()->GetTimerManager().SetTimer(
+					DurationHandle,
+					FTimerDelegate::CreateLambda([&]()
+						{
+							GetWorld()->GetTimerManager().ClearTimer(DotManagerHandle);
+						}
+					), 5.5f, false
+				);
+
+				//GetWorld()->GetTimerManager().SetTimer(
+				//	DurationHandle,
+				//	FTimerDelegate::CreateLambda([&]()  // [=] 값 캡처
+				//		{
+				//			GetWorld()->GetTimerManager().ClearTimer(DotHandle[Num]);
+				//		}
+				//	), 5.0f, false
+				//);
+
+				//GetWorld()->GetTimerManager().SetTimer(
+				//	DoTHandle,
+				//	FTimerDelegate::CreateLambda([&]()
+				//		{
+				//			GetWorldTimerManager().ClearTimer(DoTHandle);
+				//		}
+				//	), 5.0f, false
+				//);
+
+				//GetWorld()->GetTimerManager().SetTimer(
+				//	DelayHandle,
+				//	FTimerDelegate::CreateLambda([&]()
+				//		{
+				//			
+				//		}
+				//	), 1.0f, false
+				//);
+			}
+
+			FColor DebugColor = HitDetected ? FColor::Green : FColor::Red;
+			if (HitDetected)
+			{
+				if (HasAuthority())
+				{
+					float CurrentAttackDamage;
+					if (bIsUsingSkill)
+					{
+						CurrentAttackDamage = CurrentDamage;
+					}
+					else
+					{
+						CurrentAttackDamage = Stat->GetTotalStat().Attack;
+					}
+					FDamageEvent DamageEvent;
+					OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+				}
+			}
+		}
+	}
+}
+
+void AP4WCharacterPlayer_BLM::RepeatingFunction()
+{
+	FTimerHandle Handle;
+	uint32 RepeatingNum = 5;
+
+	GetWorld()->GetTimerManager().SetTimer(
+		Handle,
+		FTimerDelegate::CreateLambda([&]()  // [=] 값 캡처
+			{
+				FDamageEvent DamageEvent;
+				ServerRPCApplyTargetDamage(DotHitTarget, Potency, DamageEvent, GetController(), this);
+
+				CountRepeatingCall(Handle, &RepeatingNum);
+			}
+		), 1.0f, true, 1.5f
+	);
+}
+
+void AP4WCharacterPlayer_BLM::CountRepeatingCall(FTimerHandle Handle, uint32* Num)
+{
+	if (--(*Num) <= 0)
+	{
+		GetWorldTimerManager().ClearTimer(Handle);
+	}
+
+	//if (--RepeatingCallsRemaining <= 0)
+	
+}
+
+void AP4WCharacterPlayer_BLM::RepeatingDamage(uint32 Num)
+{
+	FDamageEvent DamageEvent;
+	ServerRPCApplyTargetDamage(DotHitTarget, Potency, DamageEvent, GetController(), this);
+}
+
 void AP4WCharacterPlayer_BLM::PlayBlizzardAttackAnimation(int32 Time)
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
@@ -910,6 +1171,8 @@ void AP4WCharacterPlayer_BLM::PlayFireAttackAnimation(int32 Time)
 
 void AP4WCharacterPlayer_BLM::PlayThunderAttackAnimation(int32 Time)
 {
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->Montage_Play(ThunderAttackMontage);
 }
 
 void AP4WCharacterPlayer_BLM::PlayFireBallAttackAnimation(int32 Time)

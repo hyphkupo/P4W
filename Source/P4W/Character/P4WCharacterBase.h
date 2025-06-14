@@ -144,6 +144,8 @@ protected:
 
 // Stat Section
 protected:
+
+public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UP4WCharacterStatComponent> Stat;
 
@@ -165,12 +167,12 @@ protected:
 protected:
 	virtual void AttackHitCheck() override;
 	virtual void SpellHitCheck() override;
+	virtual void SpellHitCheckDoT() override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class USkillSystemComponent> Skill;
-
 
 public:
 	UPROPERTY(Replicated)
@@ -185,6 +187,10 @@ public:
 	UPROPERTY()
 	TObjectPtr<class AActor> HitTarget;
 	TArray<class AActor*> HitActors;
+
+	// 타겟 해제 방지용
+	UPROPERTY()
+	TObjectPtr<class AActor> DotHitTarget;
 
 	//void ConeDetectWithDotProduct();
 

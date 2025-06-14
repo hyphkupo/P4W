@@ -24,4 +24,5 @@ class P4W_API IP4WAnimationAttackInterface
 public:
 	virtual void AttackHitCheck() = 0;
 	virtual void SpellHitCheck() = 0;
+	virtual void SpellHitCheckDoT() = 0;
 };

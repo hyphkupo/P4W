@@ -523,6 +523,10 @@ void AP4WCharacterBase::SpellHitCheck()
 {
 }
 
+void AP4WCharacterBase::SpellHitCheckDoT()
+{
+}
+
 float AP4WCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);

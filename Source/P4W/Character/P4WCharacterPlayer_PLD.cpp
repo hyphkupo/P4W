@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Character/P4WCharacterPlayer_PLD.h"
@@ -76,6 +76,12 @@ AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 		FAttackAction = FAttackActionRef.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> HealUpMontageRef(TEXT("/Game/Animation/AM_HealUp.AM_HealUp"));
+	if (HealUpMontageRef.Object)
+	{
+		HealUpMontage = HealUpMontageRef.Object;
+	}
+
 	bReplicates = true;
 	bIsInCombo = false;
 	bIsSheltron = false;
@@ -83,6 +89,7 @@ AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 	bCanPlayCombo1 = true;
 	bCanPlayCombo2 = true;
 	bCanPlayCombo3 = true;
+	bCanPlayHealUp = true;
 }
 
 void AP4WCharacterPlayer_PLD::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -107,6 +114,7 @@ void AP4WCharacterPlayer_PLD::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(Combo2AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Combo2Attack);
 	EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Combo3Attack);
 	EnhancedInputComponent->BindAction(RAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Sheltron);
+	EnhancedInputComponent->BindAction(FAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::HealUp);
 }
 
 void AP4WCharacterPlayer_PLD::AutoAttack(const FInputActionValue& Value)
@@ -191,7 +199,7 @@ void AP4WCharacterPlayer_PLD::Combo1Attack(const FInputActionValue& Value)
 			), CooldownTime, false
 		);
 
-		// ÄğÅ¸ÀÓ Ãâ·Â
+		// ì¿¨íƒ€ì„ ì¶œë ¥
 		UE_LOG(LogTemp, Log, TEXT("CooldownTime: %f/%f"), GetWorld()->GetTimerManager().GetTimerElapsed(CooldownHandle_Combo1), CooldownTime)
 
 		CurrentDamage = 22.0f;
@@ -255,7 +263,7 @@ void AP4WCharacterPlayer_PLD::Combo2Attack(const FInputActionValue& Value)
 			), CooldownTime, false
 		);
 
-		// ÄğÅ¸ÀÓ Ãâ·Â
+		// ì¿¨íƒ€ì„ ì¶œë ¥
 		UE_LOG(LogTemp, Log, TEXT("CooldownTime: %f/%f"), GetWorld()->GetTimerManager().GetTimerElapsed(CooldownHandle_Combo2), CooldownTime)
 
 		if (PrevComboNum == 1 && bCanNextCombo1)
@@ -313,7 +321,7 @@ void AP4WCharacterPlayer_PLD::Combo3Attack(const FInputActionValue& Value)
 			), CooldownTime, false
 		);
 
-		// ÄğÅ¸ÀÓ Ãâ·Â
+		// ì¿¨íƒ€ì„ ì¶œë ¥
 		UE_LOG(LogTemp, Log, TEXT("CooldownTime: %f/%f"), GetWorld()->GetTimerManager().GetTimerElapsed(CooldownHandle_Combo3), CooldownTime)
 
 		if (PrevComboNum == 2 && bCanNextCombo2)
@@ -338,13 +346,80 @@ void AP4WCharacterPlayer_PLD::Combo3Attack(const FInputActionValue& Value)
 
 // Cast: 1.5s, Cooldown time: 2.5s, MP Cost: 2000MP, Range: 30y, Radius: 0y
 // Cure Potency: 1000
+// FAction
 void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 {
-	if (bCanAttack)
+	CastingTime = 1.5f;
+
+	// íƒ€ê²Ÿì´ ì—†ìœ¼ë©´ ê³µê²© ë¶ˆê°€
+	if (!HitTarget)
 	{
-		CooldownTime = 2.5f;
+		if (IsLocallyControlled())
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("ê³µê²©í•  ëŒ€ìƒì´ ì—†ìŠµë‹ˆë‹¤"));
+			return;
+		}
 	}
 
+	if (bCanAttack && bCanPlayHealUp)
+	{
+		bIsUsingSkill = true;
+		CooldownTime = 2.5f;
+		CurrentDamage = 18.0f;
+		bCanAttack = false;
+
+		bIsCasting = true;
+		bCanPlayHealUp = false;
+
+		Stat->ApplyUseMp(2000.0f);
+
+		PlayHealUpAnimation(CastingTime);
+
+		FTimerHandle HealUpHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			HealUpHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanAttack = true;
+
+					// HealUp
+					// ë‚˜ x, ëŒ€ìƒì—ê²Œ í
+					AP4WCharacterBase* Target = Cast<AP4WCharacterBase>(HitTarget);
+					if (Target)
+					{
+						Target->Stat->HealHp(50.0f);
+					}
+				}
+			), CastingTime, false
+		);
+
+		//PlayFireAttackAnimation();
+		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_HealUp,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayHealUp = true;
+				}
+			), CooldownTime, false
+		);
+
+		//UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+
+		//if (bIsCasting && bIsAnyKeyPressed)
+		//{
+		//	UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+		//	//AnimInstance->StopAllMontages(0.5f);
+		//	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		//	AnimInstance->Montage_Stop(0.0f, HealUpMontage);
+
+		//	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		//}
+
+		ServerRPCHealUp(CastingTime);
+	}
 }
 
 // Cast: Instant, Cooldown time: 5s, MP Cost: 0MP, Range: 0y, Radius: 0y
@@ -378,9 +453,7 @@ void AP4WCharacterPlayer_PLD::Provoke(const FInputActionValue& Value)
 	if (bCanAttack)
 	{
 		CooldownTime = 30.0f;
-
 	}
-
 }
 
 bool AP4WCharacterPlayer_PLD::ServerRPCNotifyHit_Validate(const FHitResult& HitResult, float HitCheckTime)
@@ -434,7 +507,7 @@ void AP4WCharacterPlayer_PLD::ServerRPCNotifyHit_Implementation(const FHitResult
 				}
 				UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), Stat->GetTotalStat().Attack);
 
-				// ±âº» °ø°İ ´ë¹ÌÁö·Î µÇµ¹¸²
+				// ê¸°ë³¸ ê³µê²© ëŒ€ë¯¸ì§€ë¡œ ë˜ëŒë¦¼
 				Stat->SetDamage(PrevDamage);
 			}
 		}
@@ -505,7 +578,7 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 		float HitCheckTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
 		if (!HasAuthority())
 		{
-			// @Todo: ¿ø°Å¸® °ø°İ
+			// @Todo: ì›ê±°ë¦¬ ê³µê²©
 			if (HitTarget)
 			{
 				FDamageEvent DamageEvent;
@@ -641,6 +714,10 @@ void AP4WCharacterPlayer_PLD::SpellHitCheck()
 {
 }
 
+void AP4WCharacterPlayer_PLD::SpellHitCheckDoT()
+{
+}
+
 float AP4WCharacterPlayer_PLD::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -679,18 +756,37 @@ void AP4WCharacterPlayer_PLD::ProcessComboCommand()
 	}
 }
 
+void AP4WCharacterPlayer_PLD::PlayHealUpAnimation(int32 Time)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->Montage_Play(HealUpMontage);
+}
+
+void AP4WCharacterPlayer_PLD::ServerRPCHealUp_Implementation(int32 Time)
+{
+	MulticastRPCHealUp(Time);
+}
+
+void AP4WCharacterPlayer_PLD::MulticastRPCHealUp_Implementation(int32 Time)
+{
+	if (!IsLocallyControlled())		// ë¡œì»¬ì—ì„œ ì‹¤í–‰ë˜ì§€ ì•Šìœ¼ë©´(= ì„œë²„ê°€ ì•„ë‹ˆë©´)
+	{
+		PlayHealUpAnimation(Time);
+	}
+}
+
 /*
 void AP4WCharacterPlayer_PLD::ComboActionBegin()
 {
-	//// ÄŞº¸ »óÅÂ¸¦ 1·Î ¼³Á¤.
+	//// ì½¤ë³´ ìƒíƒœë¥¼ 1ë¡œ ì„¤ì •.
 	//CurrentCombo = 1;
 
-	//// ÀÌµ¿ ºñÈ°¼ºÈ­.
+	//// ì´ë™ ë¹„í™œì„±í™”.
 	////GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 	//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
-	//// ¸ùÅ¸ÁÖ Àç»ı.
-	//// ¾Ö´Ô ÀÎ½ºÅÏ½º´Â ½ºÄÌ·¹Å» ¸Ş½Ã°¡ °¡Áö°í ÀÖÀ½
+	//// ëª½íƒ€ì£¼ ì¬ìƒ.
+	//// ì• ë‹˜ ì¸ìŠ¤í„´ìŠ¤ëŠ” ìŠ¤ì¼ˆë ˆíƒˆ ë©”ì‹œê°€ ê°€ì§€ê³  ìˆìŒ
 	//UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	//if (AnimInstance)
 	//{
@@ -698,12 +794,12 @@ void AP4WCharacterPlayer_PLD::ComboActionBegin()
 	//	const float AttackSpeedRate = Stat->GetTotalStat().AttackSpeed;
 	//	AnimInstance->Montage_Play(ComboActionMontage, AttackSpeedRate);
 
-	//	// ¸ùÅ¸ÁÖ Àç»ıÀÌ ½ÃÀÛµÇ¸é, Àç»ıÀÌ Á¾·áµÉ ¶§ È£ÃâµÇ´Â µ¨¸®°ÔÀÌÆ®¿¡ µî·Ï.
+	//	// ëª½íƒ€ì£¼ ì¬ìƒì´ ì‹œì‘ë˜ë©´, ì¬ìƒì´ ì¢…ë£Œë  ë•Œ í˜¸ì¶œë˜ëŠ” ë¸ë¦¬ê²Œì´íŠ¸ì— ë“±ë¡.
 	//	FOnMontageEnded EndDelegate;
 	//	EndDelegate.BindUObject(this, &AABCharacterBase::ComboActionEnd);
-	//	AnimInstance->Montage_SetEndDelegate(EndDelegate, ComboActionMontage);	// ¸ùÅ¸ÁÖ°¡ ³¡³ª¸é ComboActionEnd¶ó´Â ÇÔ¼ö°¡ È£ÃâµÊ
+	//	AnimInstance->Montage_SetEndDelegate(EndDelegate, ComboActionMontage);	// ëª½íƒ€ì£¼ê°€ ëë‚˜ë©´ ComboActionEndë¼ëŠ” í•¨ìˆ˜ê°€ í˜¸ì¶œë¨
 
-	//	// ÄŞº¸ È®ÀÎÀ» À§ÇÑ Å¸ÀÌ¸Ó ¼³Á¤.
+	//	// ì½¤ë³´ í™•ì¸ì„ ìœ„í•œ íƒ€ì´ë¨¸ ì„¤ì •.
 	//	ComboTimerHandle.Invalidate();
 	//	SetComboCheckTimer();
 	//}
@@ -712,16 +808,16 @@ void AP4WCharacterPlayer_PLD::ComboActionBegin()
 
 void AP4WCharacterPlayer_PLD::ComboActionEnd(UAnimMontage* TargetMontage, bool IsProperlyEnded)
 {
-	//// À¯È¿¼º °Ë»ç.
+	//// ìœ íš¨ì„± ê²€ì‚¬.
 	//ensure(CurrentCombo != 0);
 
-	//// ÄŞº¸ ÃÊ±âÈ­.
+	//// ì½¤ë³´ ì´ˆê¸°í™”.
 	//CurrentCombo = 0;
 
-	//// Ä³¸¯ÅÍ ¹«ºê¸ÕÆ® ÄÄÆ÷³ÍÆ® ¸ğµå º¹±¸.
+	//// ìºë¦­í„° ë¬´ë¸Œë¨¼íŠ¸ ì»´í¬ë„ŒíŠ¸ ëª¨ë“œ ë³µêµ¬.
 	//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 
-	//// °ø°İÀÌ ³¡³ª¸é NotifyComboActionEnd ÇÔ¼ö È£Ãâ.
+	//// ê³µê²©ì´ ëë‚˜ë©´ NotifyComboActionEnd í•¨ìˆ˜ í˜¸ì¶œ.
 	//NotifyComboActionEnd();
 }
 
