@@ -16,6 +16,8 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHpChangedDelegate, float /*CurrentHp*/, 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnMpChangedDelegate, float /*CurrentMp*/, float /*MaxMp*/);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnExpChangedDelegate, float /*CurrentExp*/, float /*MaxExp*/);
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnEnmityChangedDelegate, float /*CurrentEnmity*/);
+
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStatChangedDelegate, const FP4WCharacterStat& /*BaseStat*/, const FP4WCharacterStat& /*ModifierStat*/);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -46,6 +48,9 @@ protected:
 	
 	UFUNCTION()
 	void OnRep_CurrentExp();
+	
+	UFUNCTION()
+	void OnRep_CurrentEnmity();
 
 	UFUNCTION()
 	void OnRep_MaxHp();
@@ -72,6 +77,8 @@ public:
 	FOnMpChangedDelegate OnMpChanged;
 	FOnExpChangedDelegate OnExpChanged;
 
+	FOnEnmityChangedDelegate OnEnmityChanged;
+
 	FOnStatChangedDelegate OnStatChanged;
 
 	void SetLevelStat(int32 InNewLevel);
@@ -95,6 +102,8 @@ public:
 	FORCEINLINE float GetCurrentExp() const { return CurrentExp; }
 	FORCEINLINE float GetMaxExp() const { return MaxExp; }
 
+	FORCEINLINE float GetCurrentEnmity() const { return CurrentEnmity; }
+
 	FORCEINLINE void HealHp(float InHealAmount) { CurrentHp = FMath::Clamp(CurrentHp + InHealAmount, 0, GetTotalStat().MaxHp); OnHpChanged.Broadcast(CurrentHp, MaxHp); }
 
 	FORCEINLINE float GetAttackRadius() const { return AttackRadius; }
@@ -105,6 +114,8 @@ public:
 
 	void SetMpMax();
 
+	float UpdateEnmity(float ChangedEnmity);
+
 protected:
 	//UPROPERTY()
 	//float MaxHp;
@@ -112,10 +123,12 @@ protected:
 	// 이 네가지 값들은 캐릭터가 초기화될 때마다 언제든지 바뀔 수 있기 때문에
 	// 언리얼 엔진을 저장할 때에는 해당 정보가 저장되지 않도록 Transient 키워드를 추가
 
-	// 이 함수를 통해 Hp 변경
+	// 이 함수를 통해 Hp, Mp, Exp 변경
 	void SetHp(float NewHp);
 	void SetMp(float NewMp);
 	void SetExp(float NewExp);
+
+	void SetEnmity(float NewEnmity);
 
 protected:
 	// MaxHp, MaxMp: 기본 스탯
@@ -140,6 +153,9 @@ protected:
 
 	UPROPERTY(ReplicatedUsing = OnRep_MaxExp, Transient, VisibleInstanceOnly, Category = Stat)
 	float MaxExp;
+
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentEnmity, Transient, VisibleInstanceOnly, Category = Stat)
+	float CurrentEnmity;
 
 	// 캐릭터의 기본 스탯
 	UPROPERTY(ReplicatedUsing = OnRep_BaseStat, Transient, VisibleInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))

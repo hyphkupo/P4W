@@ -54,6 +54,16 @@ void UP4WCharacterStatComponent::SetMpMax()
 	SetMp(MaxMp);
 }
 
+float UP4WCharacterStatComponent::UpdateEnmity(float ChangedEnmity)
+{
+	const float NewEnmity = FMath::Clamp<float>(CurrentEnmity + ChangedEnmity, 0, 1000.0f);
+	UE_LOG(LogTemp, Log, TEXT("CurrentEnmity: %f"), NewEnmity);
+
+	SetEnmity(NewEnmity);
+
+	return NewEnmity;
+}
+
 void UP4WCharacterStatComponent::SetHp(float NewHp)
 {
 	CurrentHp = FMath::Clamp(NewHp, 0.0f, BaseStat.MaxHp);
@@ -95,6 +105,13 @@ void UP4WCharacterStatComponent::SetExp(float NewExp)
 	}
 }
 
+void UP4WCharacterStatComponent::SetEnmity(float NewEnmity)
+{
+	CurrentEnmity = FMath::Clamp(NewEnmity, 0.0f, 1000.0f);
+
+	OnEnmityChanged.Broadcast(CurrentEnmity);
+}
+
 // Called when the game starts
 void UP4WCharacterStatComponent::BeginPlay()
 {
@@ -120,6 +137,7 @@ void UP4WCharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 	DOREPLIFETIME(UP4WCharacterStatComponent, MaxMp);
 	DOREPLIFETIME(UP4WCharacterStatComponent, CurrentExp);
 	DOREPLIFETIME(UP4WCharacterStatComponent, MaxExp);
+	DOREPLIFETIME(UP4WCharacterStatComponent, CurrentEnmity);
 	DOREPLIFETIME_CONDITION(UP4WCharacterStatComponent, BaseStat, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UP4WCharacterStatComponent, ModifierStat, COND_OwnerOnly);
 }
@@ -174,6 +192,11 @@ void UP4WCharacterStatComponent::OnRep_CurrentExp()
 	}
 }
 
+void UP4WCharacterStatComponent::OnRep_CurrentEnmity()
+{
+	OnEnmityChanged.Broadcast(CurrentEnmity);
+}
+
 void UP4WCharacterStatComponent::OnRep_MaxHp()
 {
 	OnHpChanged.Broadcast(CurrentHp, MaxHp);
@@ -207,7 +230,7 @@ void UP4WCharacterStatComponent::SetLevelStat(int32 InNewLevel)
 	BaseStat = UP4WGameSingleton::Get().GetCharacterStat(CurrentLevel);
 	check(BaseStat.MaxHp > 0.0f);
 	check(BaseStat.MaxMp > 0.0f);
-	check(BaseStat.MaxExp > 0.0f);
+	check(BaseStat.MaxExp >= 0.0f);
 }
 
 void UP4WCharacterStatComponent::ResetStat()
@@ -218,5 +241,6 @@ void UP4WCharacterStatComponent::ResetStat()
 	MaxExp = BaseStat.MaxExp;
 	SetHp(MaxHp);
 	SetMp(MaxMp);
-	SetExp(MaxExp);
+	SetExp(0);
+	SetEnmity(0);
 }

@@ -41,6 +41,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> FAttackAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> CAttackAction;
 
 protected:
 	void AutoAttack(const FInputActionValue& Value);
@@ -112,8 +115,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UP4WPLDComboActionData> ComboActionData;
 
-	void ProcessComboCommand(); 
-
 	void ComboActionBegin();
 	void ComboActionEnd(UAnimMontage* TargetMontage, bool IsProperlyEnded);
 	//void SetComboCheckTimer();
@@ -135,6 +136,7 @@ public:
 	// Sheltron
 	UPROPERTY(Replicated)
 	uint8 bIsSheltron : 1;
+	uint8 bCanPlayProvoke : 1;
 
 // Cooldown Section
 protected:

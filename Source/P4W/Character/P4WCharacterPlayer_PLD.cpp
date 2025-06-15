@@ -75,6 +75,12 @@ AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 	{
 		FAttackAction = FAttackActionRef.Object;
 	}
+	
+	static ConstructorHelpers::FObjectFinder<UInputAction> CAttackActionRef(TEXT("/Game/Input/IA_CAttack.IA_CAttack"));
+	if (CAttackActionRef.Object)
+	{
+		CAttackAction = CAttackActionRef.Object;
+	}
 
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> HealUpMontageRef(TEXT("/Game/Animation/AM_HealUp.AM_HealUp"));
 	if (HealUpMontageRef.Object)
@@ -90,6 +96,7 @@ AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 	bCanPlayCombo2 = true;
 	bCanPlayCombo3 = true;
 	bCanPlayHealUp = true;
+	bCanPlayProvoke = true;
 }
 
 void AP4WCharacterPlayer_PLD::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -115,12 +122,15 @@ void AP4WCharacterPlayer_PLD::SetupPlayerInputComponent(UInputComponent* PlayerI
 	EnhancedInputComponent->BindAction(Combo3AttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Combo3Attack);
 	EnhancedInputComponent->BindAction(RAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Sheltron);
 	EnhancedInputComponent->BindAction(FAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::HealUp);
+	EnhancedInputComponent->BindAction(CAttackAction, ETriggerEvent::Triggered, this, &AP4WCharacterPlayer_PLD::Provoke);
 }
 
 void AP4WCharacterPlayer_PLD::AutoAttack(const FInputActionValue& Value)
 {
 	if (bCanAttack)
 	{
+		ProcessComboCommand();
+
 		bCanAttack = false;
 
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
@@ -137,6 +147,7 @@ void AP4WCharacterPlayer_PLD::AutoAttack(const FInputActionValue& Value)
 					//EnableInput(Cast<APlayerController>(GetController()));
 					//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 					bCanAttack = true;
+					NotifyComboActionEnd();
 				}
 			), 1.5f, false
 		);
@@ -152,6 +163,8 @@ void AP4WCharacterPlayer_PLD::Combo1Attack(const FInputActionValue& Value)
 {
 	if (bCanAttack && bCanPlayCombo1)
 	{
+		ProcessComboCommand();
+
 		CooldownTime = 2.5f;
 		bCanPlayCombo1 = false;
 
@@ -176,6 +189,7 @@ void AP4WCharacterPlayer_PLD::Combo1Attack(const FInputActionValue& Value)
 					bCanAttack = true;
 					bIsInCombo = false;
 					PrevComboNum = 1;
+					NotifyComboActionEnd();
 				}
 			), 1.0f, false
 		);
@@ -216,6 +230,8 @@ void AP4WCharacterPlayer_PLD::Combo2Attack(const FInputActionValue& Value)
 {
 	if (bCanAttack && bCanPlayCombo2)
 	{
+		ProcessComboCommand();
+
 		CooldownTime = 2.5f;
 		bCanPlayCombo2 = false;
 
@@ -240,6 +256,7 @@ void AP4WCharacterPlayer_PLD::Combo2Attack(const FInputActionValue& Value)
 					bCanAttack = true;
 					bIsInCombo = false;
 					PrevComboNum = 2;
+					NotifyComboActionEnd();
 				}
 			), 1.0f, false
 		);
@@ -287,6 +304,8 @@ void AP4WCharacterPlayer_PLD::Combo3Attack(const FInputActionValue& Value)
 {
 	if (bCanAttack && bCanPlayCombo3)
 	{
+		ProcessComboCommand();
+
 		CooldownTime = 2.5f;
 		bCanPlayCombo3 = false;
 
@@ -308,6 +327,7 @@ void AP4WCharacterPlayer_PLD::Combo3Attack(const FInputActionValue& Value)
 					bCanAttack = true;
 					bIsInCombo = false;
 					PrevComboNum = 3;
+					NotifyComboActionEnd();
 				}
 			), 1.8f, false
 		);
@@ -425,6 +445,7 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 // Cast: Instant, Cooldown time: 5s, MP Cost: 0MP, Range: 0y, Radius: 0y
 // Reduces damage taken by 15%
 // Duration: 6s, Oath Gauge Cost: 50
+// RAction
 void AP4WCharacterPlayer_PLD::Sheltron(const FInputActionValue& Value)
 {
 	bIsSheltron = true;
@@ -442,17 +463,31 @@ void AP4WCharacterPlayer_PLD::Sheltron(const FInputActionValue& Value)
 	if (bCanAttack)
 	{
 		CooldownTime = 5.0f;
-
 	}
 }
 
 // Cast: Instant, Cooldown time: 30s, MP Cost: 0MP, Range: 25y, Radius: 0y
 // placing yourself at the top of a target's enmity list while gaining additional enmity
+// CAction
 void AP4WCharacterPlayer_PLD::Provoke(const FInputActionValue& Value)
 {
-	if (bCanAttack)
+	if (bCanPlayProvoke)
 	{
+		bCanPlayProvoke = false;
 		CooldownTime = 30.0f;
+
+		Stat->UpdateEnmity(300.0f);
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Current Enmity: %f"), Stat->GetCurrentEnmity()));
+
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(
+			Handle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bCanPlayProvoke = true;
+				}
+			), CooldownTime, false
+		);
 	}
 }
 
@@ -592,15 +627,17 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 					CurrentAttackDamage = Stat->GetTotalStat().Attack;
 				}
 
-				AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
-				if (GetHitActorTarget->bIsSheltron)
-				{
-					ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
-				}
-				else
-				{
-					ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage, DamageEvent, GetController(), this);
-				}
+				//AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+				ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+
+				//if (GetHitActorTarget->bIsSheltron)
+				//{
+				//	ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+				//}
+				//else
+				//{
+				//	ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage, DamageEvent, GetController(), this);
+				//}
 			}
 
 			if (HitDetected)
@@ -618,19 +655,21 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 
 				FDamageEvent DamageEvent;
 				UE_LOG(LogTemp, Log, TEXT("[%s]Sheltron: %d"), LOG_NETMODEINFO, bIsSheltron);
+
+				ServerRPCApplyDamage(OutHitResult, CurrentAttackDamage, DamageEvent, GetController(), this);
 				
-				AP4WCharacterPlayer_PLD* GetHitActor = Cast<AP4WCharacterPlayer_PLD>(OutHitResult.GetActor());
-				if (GetHitActor)
-				{
-					if (GetHitActor->bIsSheltron)
-					{
-						ServerRPCApplyDamage(OutHitResult, CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
-					}
-					else
-					{
-						ServerRPCApplyDamage(OutHitResult, CurrentAttackDamage, DamageEvent, GetController(), this);
-					}
-				}
+				//AP4WCharacterPlayer_PLD* GetHitActor = Cast<AP4WCharacterPlayer_PLD>(OutHitResult.GetActor());
+				//if (GetHitActor)
+				//{
+				//	if (GetHitActor->bIsSheltron)
+				//	{
+				//		ServerRPCApplyDamage(OutHitResult, CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+				//	}
+				//	else
+				//	{
+				//		ServerRPCApplyDamage(OutHitResult, CurrentAttackDamage, DamageEvent, GetController(), this);
+				//	}
+				//}
 				//OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
 				UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), CurrentAttackDamage);
 
@@ -659,15 +698,17 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 					CurrentAttackDamage = Stat->GetTotalStat().Attack;
 				}
 
-				AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
-				if (GetHitActorTarget->bIsSheltron)
-				{
-					HitTarget->TakeDamage(CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
-				}
-				else
-				{
-					HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
-				}
+				HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+
+				//AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+				//if (GetHitActorTarget->bIsSheltron)
+				//{
+				//	HitTarget->TakeDamage(CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+				//}
+				//else
+				//{
+				//	HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+				//}
 			}
 
 			FColor DebugColor = HitDetected ? FColor::Green : FColor::Red;
@@ -688,20 +729,22 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 					FDamageEvent DamageEvent;
 					UE_LOG(LogTemp, Log, TEXT("Sheltron1: %d"), bIsSheltron);
 
-					AP4WCharacterPlayer_PLD* GetHitActor = Cast<AP4WCharacterPlayer_PLD>(OutHitResult.GetActor());
+					OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
 
-					if (GetHitActor)
-					{
-						UE_LOG(LogTemp, Log, TEXT("[%s]Sheltron2: %d"), LOG_NETMODEINFO, GetHitActor->bIsSheltron);
-						if (GetHitActor->bIsSheltron)
-						{
-							OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
-						}
-						else
-						{
-							OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
-						}
-					}
+					//AP4WCharacterPlayer_PLD* GetHitActor = Cast<AP4WCharacterPlayer_PLD>(OutHitResult.GetActor());
+
+					//if (GetHitActor)
+					//{
+					//	UE_LOG(LogTemp, Log, TEXT("[%s]Sheltron2: %d"), LOG_NETMODEINFO, GetHitActor->bIsSheltron);
+					//	if (GetHitActor->bIsSheltron)
+					//	{
+					//		OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+					//	}
+					//	else
+					//	{
+					//		OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+					//	}
+					//}
 					UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), CurrentAttackDamage);
 
 				}
@@ -736,24 +779,6 @@ void AP4WCharacterPlayer_PLD::DrawDebugAttackRange(const FColor& DrawColor, FVec
 	DrawDebugCapsule(GetWorld(), CapsuleOrigin, CapsuleHalfHeight, AttackRadius, FRotationMatrix::MakeFromZ(Forward).ToQuat(), DrawColor, false, 5.0f);
 
 #endif
-}
-
-void AP4WCharacterPlayer_PLD::ProcessComboCommand()
-{
-	//if (ComboNum == 0)
-	//{
-	//	ComboActionBegin();
-	//	return;
-	//}
-
-	if (!ComboTimerHandle.IsValid())
-	{
-		HasNextComboCommand = false;
-	}
-	else
-	{
-		HasNextComboCommand = true;
-	}
 }
 
 void AP4WCharacterPlayer_PLD::PlayHealUpAnimation(int32 Time)

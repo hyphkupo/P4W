@@ -155,6 +155,8 @@ void AP4WCharacterPlayer_BLM::AutoAttack(const FInputActionValue& Value)
 {
 	if (bCanAttack)
 	{
+		ProcessComboCommand();
+
 		bCanAttack = false;
 
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
@@ -165,6 +167,7 @@ void AP4WCharacterPlayer_BLM::AutoAttack(const FInputActionValue& Value)
 			FTimerDelegate::CreateLambda([&]()
 				{
 					bCanAttack = true;
+					NotifyComboActionEnd();
 				}
 			), 1.5f, false
 		);
@@ -192,6 +195,8 @@ void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 
 	if (bCanAttack && bCanPlayBlizzardAttack)
 	{
+		ProcessComboCommand();
+
 		bIsUsingSkill = true;
 		CooldownTime = 2.5f;
 		CurrentDamage = 15.0f;
@@ -247,6 +252,8 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 
 	if (bCanAttack && bCanPlayFireAttack)
 	{
+		ProcessComboCommand();
+
 		bIsUsingSkill = true;
 		CooldownTime = 2.5f;
 		CurrentDamage = 18.0f;
@@ -305,6 +312,8 @@ void AP4WCharacterPlayer_BLM::ThunderAttack(const FInputActionValue& Value)
 
 	if (bCanAttack && bCanPlayThunderAttack)
 	{
+		ProcessComboCommand();
+
 		CooldownTime = 2.5f;
 		CurrentDamage = 10.0f;
 
@@ -368,6 +377,8 @@ void AP4WCharacterPlayer_BLM::FireBallAttack(const FInputActionValue& Value)
 
 	if (bCanAttack)
 	{
+		ProcessComboCommand();
+
 		bIsUsingSkill = true;
 		CooldownTime = 2.5f;
 		CurrentDamage = 30.0f;
@@ -1126,6 +1137,7 @@ void AP4WCharacterPlayer_BLM::PlayBlizzardAttackAnimation(int32 Time)
 				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 				bIsUsingSkill = false;
 				bCanAttack = true;
+				NotifyComboActionEnd();
 			}
 		), Time + 0.5f, false
 	);
@@ -1163,6 +1175,7 @@ void AP4WCharacterPlayer_BLM::PlayFireAttackAnimation(int32 Time)
 				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 				bIsUsingSkill = false;
 				bCanAttack = true;
+				NotifyComboActionEnd();
 			}
 		), Time + 0.5f, false
 	);
@@ -1173,6 +1186,7 @@ void AP4WCharacterPlayer_BLM::PlayThunderAttackAnimation(int32 Time)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->Montage_Play(ThunderAttackMontage);
+	NotifyComboActionEnd();
 }
 
 void AP4WCharacterPlayer_BLM::PlayFireBallAttackAnimation(int32 Time)
@@ -1206,6 +1220,7 @@ void AP4WCharacterPlayer_BLM::PlayFireBallAttackAnimation(int32 Time)
 				GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 				bIsUsingSkill = false;
 				bCanAttack = true;
+				NotifyComboActionEnd();
 			}
 		), Time + 0.5f, false
 	);
@@ -1216,6 +1231,7 @@ void AP4WCharacterPlayer_BLM::PlayManafontAnimation(int32 Time)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->Montage_Play(ManafontMontage);
+	NotifyComboActionEnd();
 }
 
 // RPC

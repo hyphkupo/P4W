@@ -696,6 +696,28 @@ void AP4WCharacterBase::FindTarget()
 	}
 }
 
+void AP4WCharacterBase::ProcessComboCommand()
+{
+	//if (ComboNum == 0)
+	//{
+	//	ComboActionBegin();
+	//	return;
+	//}
+
+	if (!ComboTimerHandle.IsValid())
+	{
+		HasNextComboCommand = false;
+	}
+	else
+	{
+		HasNextComboCommand = true;
+	}
+}
+
+void AP4WCharacterBase::NotifyComboActionEnd()
+{
+}
+
 
 //DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All)
 //{

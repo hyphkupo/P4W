@@ -194,4 +194,11 @@ public:
 
 	//void ConeDetectWithDotProduct();
 
+protected:
+	void ProcessComboCommand();
+	FTimerHandle ComboTimerHandle;
+	uint8 HasNextComboCommand;
+
+	virtual void NotifyComboActionEnd();
+
 };

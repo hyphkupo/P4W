@@ -7,6 +7,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "Player/P4WPlayerController.h"
+#include "Monster/P4WBoss.h"
 
 AP4WGameMode::AP4WGameMode()
 {
@@ -59,6 +60,20 @@ void AP4WGameMode::RestartPlayerAtTransform(AController* NewPlayer, const FTrans
 {
 	//FTransform(FVector(FMath::RandRange(10.0f, 30.0f), 30.0f, 230.0f));
 	//NewPlayer->GetPawn()->SetActorLocation(FVector(FMath::RandRange(10.0f, 30.0f), 30.0f, 230.0f));
+}
+
+void AP4WGameMode::BeginPlay()
+{
+	//const FTransform SpawnTransform(
+	//	GetActorLocation() + FVector::UpVector * 88.0f
+	//);
+
+	//const FTransform SpawnTransfrom = FVector(0.0f, 0.0f, 0.0f);
+
+	//GetWorld()->SpawnActor(AABCharacterNonPlayer::StaticClass());
+	// NPC »ý¼º.
+	//AP4WBoss* P4WBoss = GetWorld()->SpawnActorDeferred<AP4WBoss>(AP4WBoss::StaticClass(), SpawnTransform);
+	AP4WBoss* P4WBoss = GetWorld()->SpawnActor<AP4WBoss>();
 }
 
 //void AP4WGameMode::RestartPlayer(AController* NewPlayer)

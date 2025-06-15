@@ -39,6 +39,8 @@ public:
 
 	*/
 	virtual void RestartPlayerAtTransform(AController* NewPlayer, const FTransform& SpawnTransform) override;
+
+	virtual void BeginPlay() override;
 	
 protected:
 	// 플레이어 스타트 액터 배열.
