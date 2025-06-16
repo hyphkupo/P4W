@@ -201,4 +201,12 @@ protected:
 
 	virtual void NotifyComboActionEnd();
 
+public:
+	void SetMaxEnmity(float Enmity);
+	
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCSetMaxEnmity(float Enmity);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class AP4WBoss> BossPtr;
 };

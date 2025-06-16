@@ -128,6 +128,7 @@ protected:
 	void SetMp(float NewMp);
 	void SetExp(float NewExp);
 
+public:
 	void SetEnmity(float NewEnmity);
 
 protected:

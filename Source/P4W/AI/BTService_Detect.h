@@ -19,4 +19,16 @@ public:
 
 	// 정해진 Interval마다 계속해서 Tick이 호출됨
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+
+
+protected:
+	//virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	//UFUNCTION(Server, Unreliable)
+	//void ServerRPCSetEnmity(float Enmity);
+
+	//UFUNCTION(NetMulticast, Unreliable)
+	//void MulticastRPCSetEnmity(float Enmity);
+	
+	//float CompareEnmity = 0.0f;
 };

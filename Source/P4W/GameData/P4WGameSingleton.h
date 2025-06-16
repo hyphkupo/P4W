@@ -28,6 +28,9 @@ public:
 	UPROPERTY()
 	int32 CharacterMaxLevel;
 
+	UPROPERTY()
+	float MaxEnmity = 0.0f;
+
 private:
 	TArray<FP4WCharacterStat> CharacterStatTable;
 

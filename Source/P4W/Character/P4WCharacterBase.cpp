@@ -35,6 +35,8 @@
 
 #include "Kismet/KismetSystemLibrary.h"
 
+#include "Monster/P4WBoss.h"
+
 //#include "GameFramework/PlayerStart.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -224,6 +226,11 @@ void AP4WCharacterBase::BeginPlay()
 	//GetWorld()->GetFirstPlayerController()->GetPawn()->SetActorLocation(FVector(30.0f, 30.0f, 100.0f));
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Player Location: %s"), *MyCharacterPosition.ToString()));
 	*/
+
+	if (HasAuthority())
+	{
+		Stat->SetEnmity(3.0f);
+	}
 }
 
 void AP4WCharacterBase::PostNetInit()
@@ -266,6 +273,7 @@ void AP4WCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AP4WCharacterBase, CurrentDamage);
 	//DOREPLIFETIME(AP4WCharacterBase, ComboNum);
 	//DOREPLIFETIME(AP4WCharacterBase, HitTarget);
+	//DOREPLIFETIME(AP4WCharacterBase, MaxEnmity);
 }
 
 void AP4WCharacterBase::ClientRPCAutoAttack_Implementation()
@@ -716,6 +724,25 @@ void AP4WCharacterBase::ProcessComboCommand()
 
 void AP4WCharacterBase::NotifyComboActionEnd()
 {
+}
+
+void AP4WCharacterBase::SetMaxEnmity(float Enmity)
+{
+	if (HasAuthority())
+	{
+		BossPtr->MaxEnmity = Enmity;
+	}
+	else
+	{
+		BossPtr->MaxEnmity = Enmity;
+		ServerRPCSetMaxEnmity(Enmity);
+	}
+	UE_LOG(LogTemp, Log, TEXT("[%s]Enmity: %f"), LOG_NETMODEINFO, BossPtr->MaxEnmity);
+}
+
+void AP4WCharacterBase::ServerRPCSetMaxEnmity_Implementation(float Enmity)
+{
+	//MaxEnmity = Enmity;
 }
 
 

@@ -4,6 +4,7 @@
 #include "Monster/P4WBoss.h"
 #include "AI/P4WAIController.h"
 #include "CharacterStat/P4WCharacterStatComponent.h"
+#include "P4W.h"
 
 AP4WBoss::AP4WBoss()
 {
@@ -22,6 +23,7 @@ AP4WBoss::AP4WBoss()
 	{
 		GetMesh()->SetAnimInstanceClass(AnimInstanceRef.Class);
 	}
+
 }
 
 void AP4WBoss::BeginPlay()
@@ -64,4 +66,9 @@ void AP4WBoss::NotifyComboActionEnd()
 {
 	Super::NotifyComboActionEnd();
 	OnAttackFinished.ExecuteIfBound();
+}
+
+void AP4WBoss::SetBossMaxEnmity(float Enmity)
+{
+	MaxEnmity = Enmity;
 }

@@ -29,6 +29,10 @@
 
 #include "GameFramework/Character.h"
 
+#include "Monster/P4WBoss.h"
+
+#include "GameData/P4WGameSingleton.h"
+
 AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 {
 	//static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMesh(TEXT(""))
@@ -477,6 +481,11 @@ void AP4WCharacterPlayer_PLD::Provoke(const FInputActionValue& Value)
 		CooldownTime = 30.0f;
 
 		Stat->UpdateEnmity(300.0f);
+		
+		//SetMaxEnmity(Stat->GetCurrentEnmity());
+		//SetBossMaxEnmity
+		BossPtr->SetBossMaxEnmity(Stat->GetCurrentEnmity());
+
 		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Current Enmity: %f"), Stat->GetCurrentEnmity()));
 
 		FTimerHandle Handle;

@@ -35,4 +35,10 @@ protected:
 	FAICharacterAttackFinished OnAttackFinished;
 
 	virtual void NotifyComboActionEnd() override;
+
+public:
+	void SetBossMaxEnmity(float Enmity);
+
+	UPROPERTY()
+	float MaxEnmity;
 };

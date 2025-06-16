@@ -9,6 +9,10 @@
 #include "Physics/P4WCollision.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/OverlapResult.h"
+#include "Character/P4WCharacterBase.h"
+#include "Net/UnrealNetwork.h"
+#include "GameFramework/Actor.h"
+#include "Monster/P4WBoss.h"
 
 UBTService_Detect::UBTService_Detect()
 {
@@ -52,24 +56,67 @@ void UBTService_Detect::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 		CollisionQueryParam
 	);
 
+	bool bIsTarget = false;
 	if (bResult)
 	{
 		for (auto const& OverlapResult : OverlapResults)
 		{
 			APawn* Pawn = Cast<APawn>(OverlapResult.GetActor());
 			// 폰을 조종하고 있는 것이 플레이어 컨트롤러인 경우(플레이어 캐릭터)에만 감지했다고 가정
-			if (Pawn && Pawn->GetController()->IsPlayerController())
+			
+			AP4WCharacterBase* PawnCharacter = Cast<AP4WCharacterBase>(Pawn);
+			AP4WBoss* BossPawn = Cast<AP4WBoss>(AIPawn);
+
+			if (Pawn && Pawn->GetController()->IsPlayerController() && (PawnCharacter->Stat->GetCurrentEnmity() >= BossPawn->MaxEnmity))
 			{
+				bIsTarget = true;
+
 				OwnerComp.GetBlackboardComponent()->SetValueAsObject(BBKEY_TARGET, Pawn);
 				DrawDebugSphere(World, Center, DetectRadius, 16, FColor::Green, false, 0.2f);
 
 				DrawDebugPoint(World, Pawn->GetActorLocation(), 10.0f, FColor::Green, false, 0.2f);
 				DrawDebugLine(World, ControllingPawn->GetActorLocation(), Pawn->GetActorLocation(), FColor::Green, false, 0.27f);
-				return;
+
+				//BossPawn->SetMaxEnmity(PawnCharacter->Stat->GetCurrentEnmity());
+				UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), BossPawn->MaxEnmity);
+				CompareEnmity = BossPawn->MaxEnmity;
+
+				//if (Pawn->HasAuthority())
+				//{
+				//	//ServerRPCSetEnmity(PawnCharacter->Stat->GetCurrentEnmity());
+				//	MaxEnmity = PawnCharacter->Stat->GetCurrentEnmity();
+				//	UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), MaxEnmity);
+				//}
+				//else
+				//{
+				//	ServerRPCSetEnmity(PawnCharacter->Stat->GetCurrentEnmity());
+				//	UE_LOG(LogTemp, Log, TEXT("Client MaxEnmity: %f"), MaxEnmity);
+				//}
 			}
 		}
 	}
 
-	OwnerComp.GetBlackboardComponent()->SetValueAsObject(BBKEY_TARGET, nullptr);
-	DrawDebugSphere(World, Center, DetectRadius, 16, FColor::Red, false, 0.2f);
+	if (!bIsTarget)
+	{
+		OwnerComp.GetBlackboardComponent()->SetValueAsObject(BBKEY_TARGET, nullptr);
+		DrawDebugSphere(World, Center, DetectRadius, 16, FColor::Red, false, 0.2f);
+	}
 }
+
+//void UBTService_Detect::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+//{
+//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+//
+//	DOREPLIFETIME(UBTService_Detect, MaxEnmity);
+//}
+//
+//void UBTService_Detect::ServerRPCSetEnmity_Implementation(float Enmity)
+//{
+//	MaxEnmity = Enmity;
+//	MulticastRPCSetEnmity(Enmity);
+//}
+//
+//void UBTService_Detect::MulticastRPCSetEnmity_Implementation(float Enmity)
+//{
+//	MaxEnmity = Enmity;
+//}
