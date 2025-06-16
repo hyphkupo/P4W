@@ -79,7 +79,7 @@ void UBTService_Detect::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 
 				//BossPawn->SetMaxEnmity(PawnCharacter->Stat->GetCurrentEnmity());
 				UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), BossPawn->MaxEnmity);
-				CompareEnmity = BossPawn->MaxEnmity;
+				//CompareEnmity = BossPawn->MaxEnmity;
 
 				//if (Pawn->HasAuthority())
 				//{
