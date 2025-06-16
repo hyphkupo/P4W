@@ -36,6 +36,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 
 #include "Monster/P4WBoss.h"
+#include "Game/P4WGameInstance.h"
 
 //#include "GameFramework/PlayerStart.h"
 
@@ -227,10 +228,6 @@ void AP4WCharacterBase::BeginPlay()
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Player Location: %s"), *MyCharacterPosition.ToString()));
 	*/
 
-	if (HasAuthority())
-	{
-		Stat->SetEnmity(3.0f);
-	}
 }
 
 void AP4WCharacterBase::PostNetInit()
@@ -728,16 +725,27 @@ void AP4WCharacterBase::NotifyComboActionEnd()
 
 void AP4WCharacterBase::SetMaxEnmity(float Enmity)
 {
-	if (HasAuthority())
+	UP4WGameInstance* GameInstance = Cast<UP4WGameInstance>(GetGameInstance());
+	if (GameInstance)
 	{
-		BossPtr->MaxEnmity = Enmity;
+		GameInstance->MaxEnmity = Enmity;
 	}
-	else
-	{
-		BossPtr->MaxEnmity = Enmity;
-		ServerRPCSetMaxEnmity(Enmity);
-	}
-	UE_LOG(LogTemp, Log, TEXT("[%s]Enmity: %f"), LOG_NETMODEINFO, BossPtr->MaxEnmity);
+
+	//if (HasAuthority())
+	//{
+	//	BossPtr->MaxEnmity = Enmity;
+	//}
+	//else
+	//{
+	//	BossPtr->MaxEnmity = Enmity;
+	//	ServerRPCSetMaxEnmity(Enmity);
+	//}
+	UE_LOG(LogTemp, Log, TEXT("[%s]Enmity: %f"), LOG_NETMODEINFO, GameInstance->MaxEnmity);
+}
+
+void AP4WCharacterBase::MulticastRPCPushAnimation_Implementation(UAnimMontage* Montage)
+{
+	GetMesh()->GetAnimInstance()->Montage_Play(Montage);
 }
 
 void AP4WCharacterBase::ServerRPCSetMaxEnmity_Implementation(float Enmity)

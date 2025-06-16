@@ -5,6 +5,8 @@
 #include "AI/P4WAIController.h"
 #include "CharacterStat/P4WCharacterStatComponent.h"
 #include "P4W.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
 
 AP4WBoss::AP4WBoss()
 {
@@ -24,6 +26,11 @@ AP4WBoss::AP4WBoss()
 		GetMesh()->SetAnimInstanceClass(AnimInstanceRef.Class);
 	}
 
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> AutoAttackBossMontageRef(TEXT("/Game/Animation/AM_AutoAttackBoss.AM_AutoAttackBoss"));
+	if (AutoAttackBossMontageRef.Object)
+	{
+		AutoAttackBossMontage = AutoAttackBossMontageRef.Object;
+	}
 }
 
 void AP4WBoss::BeginPlay()
@@ -34,12 +41,12 @@ void AP4WBoss::BeginPlay()
 // Á¤Âû ¹üÀ§
 float AP4WBoss::GetAIPatrolRadius()
 {
-	return 800.0f;
+	return 3000.0f;
 }
 
 float AP4WBoss::GetAIDetectRange()
 {
-	return 400.0f;
+	return 2000.0f;
 }
 
 float AP4WBoss::GetAIAttackRange()
@@ -68,7 +75,13 @@ void AP4WBoss::NotifyComboActionEnd()
 	OnAttackFinished.ExecuteIfBound();
 }
 
-void AP4WBoss::SetBossMaxEnmity(float Enmity)
+void AP4WBoss::AutoAttack()
 {
-	MaxEnmity = Enmity;
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->Montage_Play(AutoAttackBossMontage);
 }
+
+//void AP4WBoss::SetBossMaxEnmity(float Enmity)
+//{
+//	MaxEnmity = Enmity;
+//}

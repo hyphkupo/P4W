@@ -26,6 +26,7 @@ UP4WGameSingleton::UP4WGameSingleton()
 
 	CharacterMaxLevel = CharacterStatTable.Num();
 	ensure(CharacterMaxLevel > 0);
+	//MaxEnmity = 0.0f;
 }
 
 UP4WGameSingleton& UP4WGameSingleton::Get()

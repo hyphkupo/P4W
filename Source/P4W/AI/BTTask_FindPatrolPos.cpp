@@ -7,6 +7,7 @@
 #include "NavigationSystem.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Interface/P4WCharacterAIInterface.h"
+//#include "GameData/P4WGameSingleton.h"
 
 UBTTask_FindPatrolPos::UBTTask_FindPatrolPos()
 {

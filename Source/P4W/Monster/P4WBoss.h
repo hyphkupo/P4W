@@ -35,10 +35,17 @@ protected:
 	FAICharacterAttackFinished OnAttackFinished;
 
 	virtual void NotifyComboActionEnd() override;
+	
+public:
+	void AutoAttack();
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAnimMontage> AutoAttackBossMontage;
 
 public:
-	void SetBossMaxEnmity(float Enmity);
+	//void SetBossMaxEnmity(float Enmity);
 
-	UPROPERTY()
-	float MaxEnmity;
+	//UPROPERTY()
+	//float MaxEnmity;
 };

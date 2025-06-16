@@ -32,6 +32,7 @@
 #include "Monster/P4WBoss.h"
 
 #include "GameData/P4WGameSingleton.h"
+#include "Game/P4WGameInstance.h"
 
 AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 {
@@ -484,9 +485,17 @@ void AP4WCharacterPlayer_PLD::Provoke(const FInputActionValue& Value)
 		
 		//SetMaxEnmity(Stat->GetCurrentEnmity());
 		//SetBossMaxEnmity
-		BossPtr->SetBossMaxEnmity(Stat->GetCurrentEnmity());
+		//BossPtr->SetBossMaxEnmity(Stat->GetCurrentEnmity());
 
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Current Enmity: %f"), Stat->GetCurrentEnmity()));
+		//UP4WGameSingleton::Get().MaxEnmity = Stat->GetCurrentEnmity();
+		UP4WGameInstance* GameInstance = Cast<UP4WGameInstance>(GetGameInstance());
+		if (GameInstance)
+		{
+			GameInstance->MaxEnmity = Stat->GetCurrentEnmity();
+		}
+
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Current Enmity: %f"), GameInstance->MaxEnmity));
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Current Enmity2: %f"), Stat->GetCurrentEnmity()));
 
 		FTimerHandle Handle;
 		GetWorld()->GetTimerManager().SetTimer(

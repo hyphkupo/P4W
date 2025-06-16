@@ -13,6 +13,8 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Actor.h"
 #include "Monster/P4WBoss.h"
+#include "GameData/P4WGameSingleton.h"
+#include "Game/P4WGameInstance.h"
 
 UBTService_Detect::UBTService_Detect()
 {
@@ -56,6 +58,8 @@ void UBTService_Detect::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 		CollisionQueryParam
 	);
 
+	//UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), UP4WGameSingleton::Get().MaxEnmity);
+
 	bool bIsTarget = false;
 	if (bResult)
 	{
@@ -67,31 +71,34 @@ void UBTService_Detect::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 			AP4WCharacterBase* PawnCharacter = Cast<AP4WCharacterBase>(Pawn);
 			AP4WBoss* BossPawn = Cast<AP4WBoss>(AIPawn);
 
-			if (Pawn && Pawn->GetController()->IsPlayerController() && (PawnCharacter->Stat->GetCurrentEnmity() >= BossPawn->MaxEnmity))
+			UP4WGameInstance* GameInstance = Cast<UP4WGameInstance>(GetWorld()->GetGameInstance());
+			if (GameInstance)
 			{
-				bIsTarget = true;
+				if (Pawn && Pawn->GetController()->IsPlayerController() && (PawnCharacter->Stat->GetCurrentEnmity() >= GameInstance->MaxEnmity))
+				{
+					bIsTarget = true;
 
-				OwnerComp.GetBlackboardComponent()->SetValueAsObject(BBKEY_TARGET, Pawn);
-				DrawDebugSphere(World, Center, DetectRadius, 16, FColor::Green, false, 0.2f);
+					OwnerComp.GetBlackboardComponent()->SetValueAsObject(BBKEY_TARGET, Pawn);
+					DrawDebugSphere(World, Center, DetectRadius, 16, FColor::Green, false, 0.2f);
 
-				DrawDebugPoint(World, Pawn->GetActorLocation(), 10.0f, FColor::Green, false, 0.2f);
-				DrawDebugLine(World, ControllingPawn->GetActorLocation(), Pawn->GetActorLocation(), FColor::Green, false, 0.27f);
+					DrawDebugPoint(World, Pawn->GetActorLocation(), 10.0f, FColor::Green, false, 0.2f);
+					DrawDebugLine(World, ControllingPawn->GetActorLocation(), Pawn->GetActorLocation(), FColor::Green, false, 0.27f);
 
-				//BossPawn->SetMaxEnmity(PawnCharacter->Stat->GetCurrentEnmity());
-				UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), BossPawn->MaxEnmity);
-				//CompareEnmity = BossPawn->MaxEnmity;
+					//BossPawn->SetMaxEnmity(PawnCharacter->Stat->GetCurrentEnmity());
+					//CompareEnmity = BossPawn->MaxEnmity;
 
-				//if (Pawn->HasAuthority())
-				//{
-				//	//ServerRPCSetEnmity(PawnCharacter->Stat->GetCurrentEnmity());
-				//	MaxEnmity = PawnCharacter->Stat->GetCurrentEnmity();
-				//	UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), MaxEnmity);
-				//}
-				//else
-				//{
-				//	ServerRPCSetEnmity(PawnCharacter->Stat->GetCurrentEnmity());
-				//	UE_LOG(LogTemp, Log, TEXT("Client MaxEnmity: %f"), MaxEnmity);
-				//}
+					//if (Pawn->HasAuthority())
+					//{
+					//	//ServerRPCSetEnmity(PawnCharacter->Stat->GetCurrentEnmity());
+					//	MaxEnmity = PawnCharacter->Stat->GetCurrentEnmity();
+					//	UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), MaxEnmity);
+					//}
+					//else
+					//{
+					//	ServerRPCSetEnmity(PawnCharacter->Stat->GetCurrentEnmity());
+					//	UE_LOG(LogTemp, Log, TEXT("Client MaxEnmity: %f"), MaxEnmity);
+					//}
+				}
 			}
 		}
 	}

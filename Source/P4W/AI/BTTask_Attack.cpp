@@ -4,6 +4,7 @@
 #include "AI/BTTask_Attack.h"
 #include "AIController.h"
 #include "Interface/P4WCharacterAIInterface.h"
+#include "Monster/P4WBoss.h"
 
 UBTTask_Attack::UBTTask_Attack()
 {
@@ -35,5 +36,12 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 
 	AIPawn->SetAIAttackDelegate(OnAttackFinished);
 	AIPawn->AttackByAI();
+
+	AP4WBoss* BossPawn = Cast<AP4WBoss>(ControllingPawn);
+	if (BossPawn)
+	{
+		BossPawn->AutoAttack();
+	}
+
 	return EBTNodeResult::InProgress;
 }

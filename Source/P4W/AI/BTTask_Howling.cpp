@@ -1,0 +1,107 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "AI/BTTask_Howling.h"
+#include "AIController.h"
+#include "Interface/P4WCharacterAIInterface.h"
+#include "Monster/P4WBoss.h"
+#include "Kismet/GameplayStatics.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "DrawDebugHelpers.h"
+#include "NavigationSystem.h"
+#include "Net/UnrealNetwork.h"
+#include "Character/P4WCharacterBase.h"
+
+UBTTask_Howling::UBTTask_Howling()
+{
+	NodeName = TEXT("Howling");
+
+    static ConstructorHelpers::FObjectFinder<UAnimMontage> PushMontageRef(TEXT("/Game/Animation/AM_Push.AM_Push"));
+    if (PushMontageRef.Object)
+    {
+        PushMontage = PushMontageRef.Object;
+    }
+}
+
+EBTNodeResult::Type UBTTask_Howling::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	EBTNodeResult::Type Result = Super::ExecuteTask(OwnerComp, NodeMemory);
+
+    AAIController* AICon = OwnerComp.GetAIOwner();
+    
+    APawn* BossPawn = AICon ? AICon->GetPawn() : nullptr;
+    if (!BossPawn)
+    {
+        return EBTNodeResult::Failed;
+    }
+
+    UWorld* World = BossPawn->GetWorld();
+    if (!World)
+    {
+        return EBTNodeResult::Failed;
+    }
+
+    FVector BossLocation = BossPawn->GetActorLocation();
+
+    TArray<AActor*> AllPawns;
+    UGameplayStatics::GetAllActorsOfClass(World, APawn::StaticClass(), AllPawns);
+
+    for (AActor* Actor : AllPawns)
+    {
+        APawn* TargetPawn = Cast<APawn>(Actor);
+        
+        if (!TargetPawn) continue;
+        if (!bAffectSelf && TargetPawn == BossPawn) continue;
+
+        float Distance = FVector::Dist(BossLocation, TargetPawn->GetActorLocation());
+        if (Distance > PushRadius) continue;
+
+        FVector Direction = (TargetPawn->GetActorLocation() - BossLocation).GetSafeNormal();
+        FVector StartLoc = TargetPawn->GetActorLocation();
+        FVector EndLoc = StartLoc + Direction * PushStrength;
+
+        //if (ACharacter* Char = Cast<ACharacter>(TargetPawn))
+        //{
+        //    AnimChar = Char;
+        //    Char->GetMesh()->GetAnimInstance()->Montage_Play(PushMontage);
+        //    //MulticastRPCPushAnimation
+        //}
+
+        if (AP4WCharacterBase* Char = Cast<AP4WCharacterBase>(TargetPawn))
+        {
+            Char->MulticastRPCPushAnimation(PushMontage);
+        }
+
+        float Interval = 0.02f;
+        int32 Steps = PushDuration / Interval;
+
+        for (int32 i = 1; i <= Steps; ++i)
+        {
+            float Alpha = (float)i / (float)Steps;
+
+            FTimerHandle TimerHandle;
+            World->GetTimerManager().SetTimer(TimerHandle, [TargetPawn, StartLoc, EndLoc, Alpha]()
+                {
+                    if (TargetPawn)
+                    {
+                        FVector NewLoc = FMath::Lerp(StartLoc, EndLoc, Alpha);
+                        TargetPawn->SetActorLocation(NewLoc, true);
+                    }
+                }, Interval * i, false
+            );
+        }
+    }
+
+    return EBTNodeResult::Succeeded;
+}
+
+//void UBTTask_Howling::ServerRPCPushAnimation_Implementation(ACharacter* Char)
+//{
+//    Char->GetMesh()->GetAnimInstance()->Montage_Play(PushMontage);
+//    MulticastRPCPushAnimation(Char);
+//}
+//
+//void UBTTask_Howling::MulticastRPCPushAnimation_Implementation(ACharacter* Char)
+//{
+//    Char->GetMesh()->GetAnimInstance()->Montage_Play(PushMontage);
+//}
