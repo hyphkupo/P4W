@@ -7,6 +7,7 @@
 #include "P4W.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
+#include "Components/CapsuleComponent.h"
 
 AP4WBoss::AP4WBoss()
 {
@@ -31,6 +32,9 @@ AP4WBoss::AP4WBoss()
 	{
 		AutoAttackBossMontage = AutoAttackBossMontageRef.Object;
 	}
+
+	GetCapsuleComponent()->SetRelativeScale3D(FVector(3.0f, 3.0f, 3.0f));
+
 }
 
 void AP4WBoss::BeginPlay()

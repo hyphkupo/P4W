@@ -36,13 +36,16 @@ protected:
     class USphereComponent* CollisionSphere;
 
     UPROPERTY(EditAnywhere, Category = "AOE")
+    class UStaticMeshComponent* SphereMesh;
+
+    UPROPERTY(EditAnywhere, Category = "AOE")
     float Radius = 300.f;
 
     UPROPERTY(EditAnywhere, Category = "AOE")
     float Damage = 20.f;
 
     UPROPERTY(EditAnywhere, Category = "AOE")
-    float Duration = 2.0f;
+    float Duration = 3.0f;
 
     TSet<AActor*> OverlappingActors;
 };

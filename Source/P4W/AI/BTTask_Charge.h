@@ -20,16 +20,23 @@ public:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
 protected:
-    // 선택한 대상 액터
     UPROPERTY(EditAnywhere, Category = "Blackboard")
     struct FBlackboardKeySelector TargetActorKey;
 
-    // 탐색할 반경
+    // 탐색 반경
     UPROPERTY(EditAnywhere, Category = "Search")
     float SearchRadius = 1000.0f;
 
-    // 찾을 액터의 클래스
     UPROPERTY(EditAnywhere, Category = "Search")
     TSubclassOf<APawn> TargetClass;
+
+    UPROPERTY(EditAnywhere, Category = "Attack")
+    float Damage = 30.0f;
+
+    float PrevSpeed = 0.f;
+    float ChargeSpeed = 3000.0f;
+
+    UFUNCTION()
+    void ChargeComplete(ACharacter* Character, UCharacterMovementComponent* MoveComp, float StoredPrevSpeed, AActor* DamagedActor);
 
 };

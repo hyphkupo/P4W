@@ -21,11 +21,13 @@ public:
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "AOE")
-	TSubclassOf<class AAOEField> AOEClass;
+	TSubclassOf<class AAOEField> BP_AOE;
 
 	UPROPERTY(EditAnywhere, Category = "AOE")
 	float SpawnRadius = 1200.0f;
 
 	UPROPERTY(EditAnywhere, Category = "AOE")
 	bool bSpawnNearPlayer = true;
+
+	TArray<FVector> SpawnPointArray;
 };

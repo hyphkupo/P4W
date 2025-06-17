@@ -26,7 +26,7 @@ protected:
 
     // 힘의 세기 (위치 이동 거리)
     UPROPERTY(EditAnywhere, Category = "Push")
-    float PushStrength = 700.0f;
+    float PushStrength = 1500.0f;
 
     // 보스 자신 포함 여부
     UPROPERTY(EditAnywhere, Category = "Push")

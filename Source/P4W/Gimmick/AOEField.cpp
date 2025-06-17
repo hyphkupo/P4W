@@ -18,6 +18,12 @@ AAOEField::AAOEField()
     CollisionSphere->InitSphereRadius(Radius);
     CollisionSphere->SetCollisionProfileName(TEXT("OverlapAll"));
     CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &AAOEField::OnOverlapBegin);
+    
+    SphereMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SphereMesh"));
+    SphereMesh->SetupAttachment(RootComponent);
+    SphereMesh->SetHiddenInGame(false);
+
+    bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -25,7 +31,6 @@ void AAOEField::BeginPlay()
 {
 	Super::BeginPlay();
 	
-    // AOE 시각화 (디버그)
     DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 24, FColor::Red, false, Duration);
 
     FTimerHandle DamageTimerHandle;
@@ -46,19 +51,31 @@ void AAOEField::BeginPlay()
 
 void AAOEField::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (OtherActor && OtherActor != this && OtherActor->IsA<ACharacter>())
-    {
-        OverlappingActors.Add(OtherActor);
-    }
+    //if (OtherActor && OtherActor != this && OtherActor->IsA<ACharacter>())
+    //{
+    //    OverlappingActors.Add(OtherActor);
+    //}
 }
 
 void AAOEField::ApplyDamage()
 {
-    for (AActor* Actor : OverlappingActors)
+    TArray<AActor*> CurrentOverlappingActors;
+    CollisionSphere->GetOverlappingActors(CurrentOverlappingActors, ACharacter::StaticClass());
+
+    for (AActor* Actor : CurrentOverlappingActors)
     {
         UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, this, nullptr);
     }
 
     Destroy();
-}
 
+    //FTimerHandle AOESpawnTimeHandle;
+    //GetWorld()->GetTimerManager().SetTimer(
+    //    AOESpawnTimeHandle,
+    //    FTimerDelegate::CreateLambda([&]()
+    //        {
+    //            Destroy();
+    //        }
+    //    ), 1.0f, false
+    //);
+}
