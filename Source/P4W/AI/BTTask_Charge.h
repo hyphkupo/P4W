@@ -18,6 +18,8 @@ public:
 	UBTTask_Charge();
 
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+    
+    virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 
 protected:
     UPROPERTY(EditAnywhere, Category = "Blackboard")
@@ -25,7 +27,7 @@ protected:
 
     // Å½»ö ¹Ý°æ
     UPROPERTY(EditAnywhere, Category = "Search")
-    float SearchRadius = 1000.0f;
+    float SearchRadius = 2000.0f;
 
     UPROPERTY(EditAnywhere, Category = "Search")
     TSubclassOf<APawn> TargetClass;
@@ -35,8 +37,17 @@ protected:
 
     float PrevSpeed = 0.f;
     float ChargeSpeed = 3000.0f;
+    
+    float ChargeTime = 1.0f;
 
     UFUNCTION()
-    void ChargeComplete(ACharacter* Character, UCharacterMovementComponent* MoveComp, float StoredPrevSpeed, AActor* DamagedActor);
+    void ChargeComplete(ACharacter* Character, UCharacterMovementComponent* MMoveComp, float StoredPrevSpeed, AActor* DamagedActor);
+    
+    APawn* AIPawn;
+    AActor* ChosenActor;
+    AAIController* AICon;
+    ACharacter* AIChar;
+    UCharacterMovementComponent* MoveComp;
+
 
 };

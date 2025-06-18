@@ -21,6 +21,12 @@ UBTTask_Howling::UBTTask_Howling()
     {
         PushMontage = PushMontageRef.Object;
     }
+    
+    static ConstructorHelpers::FObjectFinder<UAnimMontage> HowlingMontageRef(TEXT("/Game/Animation/AM_Howling.AM_Howling"));
+    if (HowlingMontageRef.Object)
+    {
+        HowlingMontage = HowlingMontageRef.Object;
+    }
 }
 
 EBTNodeResult::Type UBTTask_Howling::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -70,6 +76,11 @@ EBTNodeResult::Type UBTTask_Howling::ExecuteTask(UBehaviorTreeComponent& OwnerCo
         if (AP4WCharacterBase* Char = Cast<AP4WCharacterBase>(TargetPawn))
         {
             Char->MulticastRPCPushAnimation(PushMontage);
+        }
+
+        if (AP4WCharacterBase* BossChar = Cast<AP4WCharacterBase>(BossPawn))
+        {
+            BossChar->MulticastRPCHowlingAnimation(HowlingMontage);
         }
 
         float Interval = 0.02f;

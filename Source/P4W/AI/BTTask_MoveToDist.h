@@ -18,5 +18,10 @@ public:
 	UBTTask_MoveToDist();
 
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+
+protected:
+	//UPROPERTY()
+	//TObjectPtr<AActor> MoveTarget;
+
 	
 };

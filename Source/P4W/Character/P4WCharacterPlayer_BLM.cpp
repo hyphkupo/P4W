@@ -20,6 +20,8 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerInput.h"
 
+#include "Character/P4WCharacterPlayer_PLD.h"
+
 AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 {
 	// Attack Input
@@ -193,6 +195,26 @@ void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 		}
 	}
 
+	AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+	if (PLDPawn)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+		return;
+	}
+
+	AP4WCharacterPlayer_BLM* BLMPawn = Cast<AP4WCharacterPlayer_BLM>(HitTarget);
+	if (BLMPawn)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+		return;
+	}
+
+	if (Stat->GetCurrentMp() < 400.0f)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("마나가 부족합니다"));
+		return;
+	}
+
 	if (bCanAttack && bCanPlayBlizzardAttack)
 	{
 		ProcessComboCommand();
@@ -248,6 +270,26 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("공격할 대상이 없습니다"));
 			return;
 		}
+	}
+
+	AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+	if (PLDPawn)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+		return;
+	}
+
+	AP4WCharacterPlayer_BLM* BLMPawn = Cast<AP4WCharacterPlayer_BLM>(HitTarget);
+	if (BLMPawn)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+		return;
+	}
+
+	if (Stat->GetCurrentMp() < 800.0f)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("마나가 부족합니다"));
+		return;
 	}
 
 	if (bCanAttack && bCanPlayFireAttack)
@@ -373,6 +415,26 @@ void AP4WCharacterPlayer_BLM::FireBallAttack(const FInputActionValue& Value)
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("공격할 대상이 없습니다"));
 			return;
 		}
+	}
+
+	AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+	if (PLDPawn)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+		return;
+	}
+
+	AP4WCharacterPlayer_BLM* BLMPawn = Cast<AP4WCharacterPlayer_BLM>(HitTarget);
+	if (BLMPawn)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+		return;
+	}
+
+	if (Stat->GetCurrentMp() < 800.0f)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("마나가 부족합니다"));
+		return;
 	}
 
 	if (bCanAttack)

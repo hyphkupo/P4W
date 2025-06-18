@@ -43,6 +43,9 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Push")
     UAnimMontage* PushMontage;
 
+    UPROPERTY(EditAnywhere, Category = "Howling")
+    TObjectPtr<class UAnimMontage> HowlingMontage;
+
     TMap<APawn*, FVector> InitialLocations;
     TMap<APawn*, FVector> TargetLocations;
 

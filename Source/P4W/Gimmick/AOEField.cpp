@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "Monster/P4WBoss.h"
 
 // Sets default values
 AAOEField::AAOEField()
@@ -17,7 +18,7 @@ AAOEField::AAOEField()
     RootComponent = CollisionSphere;
     CollisionSphere->InitSphereRadius(Radius);
     CollisionSphere->SetCollisionProfileName(TEXT("OverlapAll"));
-    CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &AAOEField::OnOverlapBegin);
+    //CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &AAOEField::OnOverlapBegin);
     
     SphereMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SphereMesh"));
     SphereMesh->SetupAttachment(RootComponent);
@@ -49,13 +50,13 @@ void AAOEField::BeginPlay()
 //	Super::Tick(DeltaTime);
 //}
 
-void AAOEField::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-    //if (OtherActor && OtherActor != this && OtherActor->IsA<ACharacter>())
-    //{
-    //    OverlappingActors.Add(OtherActor);
-    //}
-}
+//void AAOEField::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+//{
+//    //if (OtherActor && OtherActor != this && OtherActor->IsA<ACharacter>())
+//    //{
+//    //    OverlappingActors.Add(OtherActor);
+//    //}
+//}
 
 void AAOEField::ApplyDamage()
 {
@@ -64,6 +65,12 @@ void AAOEField::ApplyDamage()
 
     for (AActor* Actor : CurrentOverlappingActors)
     {
+        AP4WBoss* BossActor = Cast<AP4WBoss>(Actor);
+        if (BossActor)
+        {
+            continue;
+        }
+
         UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, this, nullptr);
     }
 

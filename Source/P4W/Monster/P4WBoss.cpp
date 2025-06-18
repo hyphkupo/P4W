@@ -8,6 +8,7 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "Components/CapsuleComponent.h"
+#include "UI/P4WWidgetComponent.h"
 
 AP4WBoss::AP4WBoss()
 {
@@ -34,6 +35,10 @@ AP4WBoss::AP4WBoss()
 	}
 
 	GetCapsuleComponent()->SetRelativeScale3D(FVector(3.0f, 3.0f, 3.0f));
+
+	// Widget Component
+	HpBar->SetRelativeLocation(FVector(0.0f, 0.0f, 75.0f));
+	HpBar->SetDrawSize(FVector2D(700.0f, 20.0f));
 
 }
 

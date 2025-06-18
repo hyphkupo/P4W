@@ -34,6 +34,8 @@
 #include "GameData/P4WGameSingleton.h"
 #include "Game/P4WGameInstance.h"
 
+#include "Character/P4WCharacterPlayer_BLM.h"
+
 AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 {
 	//static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMesh(TEXT(""))
@@ -386,6 +388,19 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 		}
 	}
 
+	AP4WBoss* BossPawn = Cast<AP4WBoss>(HitTarget);
+	if (BossPawn)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("보스에게는 힐을 줄 수 없습니다"));
+		return;
+	}
+
+	if (Stat->GetCurrentMp() < 2000.0f)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("마나가 부족합니다"));
+		return;
+	}
+
 	if (bCanAttack && bCanPlayHealUp)
 	{
 		bIsUsingSkill = true;
@@ -408,11 +423,19 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 					bCanAttack = true;
 
 					// HealUp
-					// 나 x, 대상에게 힐
+					// 대상에게 힐
 					AP4WCharacterBase* Target = Cast<AP4WCharacterBase>(HitTarget);
 					if (Target)
 					{
-						Target->Stat->HealHp(50.0f);
+						if (HasAuthority())
+						{
+							Target->Stat->HealHp(50.0f);
+						}
+						else
+						{
+							ServerRPCHealUp(Target);
+						}
+						UE_LOG(LogTemp, Log, TEXT("[%s] Target HP: %f"), LOG_NETMODEINFO, Target->Stat->GetCurrentHp());
 					}
 				}
 			), CastingTime, false
@@ -443,7 +466,7 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 		//	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 		//}
 
-		ServerRPCHealUp(CastingTime);
+		ServerRPCHealUpAnimation(CastingTime);
 	}
 }
 
@@ -644,9 +667,24 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 				{
 					CurrentAttackDamage = Stat->GetTotalStat().Attack;
 				}
+				
+				// 플레이어 -> 플레이어 공격 막음
+				AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+				if (PLDPawn)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+					return;
+				}
+
+				AP4WCharacterPlayer_BLM* BLMPawn = Cast<AP4WCharacterPlayer_BLM>(HitTarget);
+				if (BLMPawn)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+					return;
+				}
 
 				//AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
-				ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+				ServerRPCApplyTargetDamage(HitTarget, CurrentAttackDamage, DamageEvent, GetController(), this);
 
 				//if (GetHitActorTarget->bIsSheltron)
 				//{
@@ -669,6 +707,21 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 				else
 				{
 					CurrentAttackDamage = Stat->GetTotalStat().Attack;
+				}
+
+				// 플레이어 -> 플레이어 공격 막음
+				AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(OutHitResult.GetActor());
+				if (PLDPawn)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+					return;
+				}
+
+				AP4WCharacterPlayer_BLM* BLMPawn = Cast<AP4WCharacterPlayer_BLM>(OutHitResult.GetActor());
+				if (BLMPawn)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+					return;
 				}
 
 				FDamageEvent DamageEvent;
@@ -716,6 +769,21 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 					CurrentAttackDamage = Stat->GetTotalStat().Attack;
 				}
 
+				// 플레이어 -> 플레이어 공격 막음
+				AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+				if (PLDPawn)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+					return;
+				}
+
+				AP4WCharacterPlayer_BLM* BLMPawn = Cast<AP4WCharacterPlayer_BLM>(HitTarget);
+				if (BLMPawn)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+					return;
+				}
+
 				HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
 
 				//AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
@@ -744,6 +812,22 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 					{
 						CurrentAttackDamage = Stat->GetTotalStat().Attack;
 					}
+
+					// 플레이어 -> 플레이어 공격 막음
+					AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(OutHitResult.GetActor());
+					if (PLDPawn)
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+						return;
+					}
+
+					AP4WCharacterPlayer_BLM* BLMPawn = Cast<AP4WCharacterPlayer_BLM>(OutHitResult.GetActor());
+					if (BLMPawn)
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+						return;
+					}
+
 					FDamageEvent DamageEvent;
 					UE_LOG(LogTemp, Log, TEXT("Sheltron1: %d"), bIsSheltron);
 
@@ -764,7 +848,6 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 					//	}
 					//}
 					UE_LOG(LogTemp, Log, TEXT("AttackDamage: %f"), CurrentAttackDamage);
-
 				}
 			}
 		}
@@ -805,12 +888,22 @@ void AP4WCharacterPlayer_PLD::PlayHealUpAnimation(int32 Time)
 	AnimInstance->Montage_Play(HealUpMontage);
 }
 
-void AP4WCharacterPlayer_PLD::ServerRPCHealUp_Implementation(int32 Time)
+void AP4WCharacterPlayer_PLD::ServerRPCHealUp_Implementation(AP4WCharacterBase* Target)
 {
-	MulticastRPCHealUp(Time);
+	Target->Stat->HealHp(50.0f);
 }
 
-void AP4WCharacterPlayer_PLD::MulticastRPCHealUp_Implementation(int32 Time)
+//void AP4WCharacterPlayer_PLD::MulticastRPCHealUp_Implementation()
+//{
+//
+//}
+
+void AP4WCharacterPlayer_PLD::ServerRPCHealUpAnimation_Implementation(int32 Time)
+{
+	MulticastRPCHealUpAnimation(Time);
+}
+
+void AP4WCharacterPlayer_PLD::MulticastRPCHealUpAnimation_Implementation(int32 Time)
 {
 	if (!IsLocallyControlled())		// 로컬에서 실행되지 않으면(= 서버가 아니면)
 	{

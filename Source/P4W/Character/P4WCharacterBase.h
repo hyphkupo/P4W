@@ -53,6 +53,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> TargetingAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> TargetingSelfAction;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> CancelTargetingAction;
@@ -68,6 +71,7 @@ protected:
 	void Zoom(const FInputActionValue& Value);
 
 	void Targeting(const FInputActionValue& Value);
+	void TargetingSelf(const FInputActionValue& Value);
 	void CancelTargeting(const FInputActionValue& Value);
 
 // Play AnimMontage
@@ -213,5 +217,13 @@ public:
 public:
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastRPCPushAnimation(UAnimMontage* Montage);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCHowlingAnimation(UAnimMontage* Montage);
+
+protected:
+	
+
+	//SanityFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SanityFXSystem, FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 60.0f));
 
 };

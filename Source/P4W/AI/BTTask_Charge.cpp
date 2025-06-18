@@ -10,18 +10,21 @@
 #include "DrawDebugHelpers.h"
 #include "NavigationSystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Physics/P4WCollision.h"
+#include "Components/CapsuleComponent.h"
 
 UBTTask_Charge::UBTTask_Charge()
 {
     NodeName = TEXT("Charge");
+    bNotifyTick = true;
 }
 
 EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
     EBTNodeResult::Type Result = Super::ExecuteTask(OwnerComp, NodeMemory);
 
-    AAIController* AICon = OwnerComp.GetAIOwner();
-    APawn* AIPawn = AICon ? AICon->GetPawn() : nullptr;
+    AICon = OwnerComp.GetAIOwner();
+    AIPawn = AICon ? AICon->GetPawn() : nullptr;
     if (!AIPawn)
     {
         return EBTNodeResult::Failed;
@@ -33,8 +36,8 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
         return EBTNodeResult::Failed;
     }
 
-    ACharacter* AIChar = Cast<ACharacter>(AIPawn);
-    UCharacterMovementComponent* MoveComp = AIChar->GetCharacterMovement();
+    AIChar = Cast<ACharacter>(AIPawn);
+    MoveComp = AIChar->GetCharacterMovement();
     if (!AIChar || !MoveComp)
     {
         return EBTNodeResult::Failed;
@@ -65,7 +68,7 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     }
 
     int32 Index = FMath::RandRange(0, Actors.Num() - 1);
-    AActor* ChosenActor = Actors[Index];
+    ChosenActor = Actors[Index];
 
     DrawDebugSphere(World, ChosenActor->GetActorLocation(), 80.0f, 16, FColor::Red, false, 2.0f);
 
@@ -76,6 +79,7 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     PrevSpeed = MoveComp->MaxWalkSpeed;
     MoveComp->MaxWalkSpeed = ChargeSpeed;
 
+    /*
     FTimerHandle SpeedHandle;
     ////GetWorld()->GetTimerManager().SetTimer(
     ////    SpeedHandle,
@@ -97,15 +101,68 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     //);
 
     FTimerDelegate TimerDel;
-    TimerDel = FTimerDelegate::CreateUObject(this, &UBTTask_Charge::ChargeComplete, AIChar, MoveComp, PrevSpeed, ChosenActor);
+    //TimerDel = FTimerDelegate::CreateUObject(this, &UBTTask_Charge::ChargeComplete, AIChar, MoveComp, PrevSpeed, ChosenActor);
+    */
 
-    GetWorld()->GetTimerManager().SetTimer(SpeedHandle, TimerDel, 1.0f, false);
 
-    return EBTNodeResult::Succeeded;
+    
+    // overlap되면 대미지 적용?
+    //float Dist = FVector::Dist(AIPawn->GetActorLocation(), ChosenActor->GetActorLocation());
+    ////ChargeTime = ChargeTime * (Dist / 1000.0f);
+    //if (Dist <= 500.0f)
+    //{
+    //    MoveComp->MaxWalkSpeed = PrevSpeed;
+    //    UGameplayStatics::ApplyDamage(ChosenActor, Damage, nullptr, AIChar, nullptr);
+    //}
+    //GetWorld()->GetTimerManager().SetTimer(SpeedHandle, TimerDel, ChargeTime, false);
+
+    //float DetectRadius = 50.0f;
+
+    
+
+
+    //TArray<FOverlapResult> OverlapResults;
+    //FCollisionQueryParams CollisionQueryParam;
+    //bool bResult = World->OverlapMultiByChannel(
+    //    OverlapResults,
+    //    ChosenActor->GetActorLocation(),
+    //    FQuat::Identity,
+    //    CCHANNEL_P4WACTION,
+    //    FCollisionShape::MakeSphere(DetectRadius),
+    //    CollisionQueryParam
+    //);
+
+    //if (bResult)
+    //{
+    //    MoveComp->MaxWalkSpeed = PrevSpeed;
+    //    UGameplayStatics::ApplyDamage(ChosenActor, Damage, nullptr, AIChar, nullptr);
+    //}
+
+    //UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), UP4WGameSingleton::Get().MaxEnmity);
+
+    bool bIsTarget = false;
+    
+    return EBTNodeResult::InProgress;
+    //return EBTNodeResult::Failed;
+
 }
 
-void UBTTask_Charge::ChargeComplete(ACharacter* Character, UCharacterMovementComponent* MoveComp, float StoredPrevSpeed, AActor* DamagedActor)
+void UBTTask_Charge::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
-    MoveComp->MaxWalkSpeed = StoredPrevSpeed;
+    Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
+
+    float Dist = ChosenActor->GetDistanceTo(AIPawn);
+    if (Dist <= 200.0f)
+    {
+        MoveComp->MaxWalkSpeed = PrevSpeed;
+        UGameplayStatics::ApplyDamage(ChosenActor, Damage, AICon, AIChar, nullptr);
+        FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+        //return EBTNodeResult::Succeeded;
+    }
+}
+
+void UBTTask_Charge::ChargeComplete(ACharacter* Character, UCharacterMovementComponent* MMoveComp, float StoredPrevSpeed, AActor* DamagedActor)
+{
+    MMoveComp->MaxWalkSpeed = StoredPrevSpeed;
     UGameplayStatics::ApplyDamage(DamagedActor, Damage, nullptr, Character, nullptr);
 }

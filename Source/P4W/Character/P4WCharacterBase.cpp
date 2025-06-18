@@ -27,6 +27,7 @@
 #include "UI/P4WUserWidget.h"
 #include "UI/P4WHpBarWidget.h"
 #include "UI/P4WMpBarWidget.h"
+#include "UI/P4WWidgetComponent.h"
 
 #include "Physics/P4WCollision.h"
 #include "Engine/DamageEvents.h"
@@ -93,6 +94,12 @@ AP4WCharacterBase::AP4WCharacterBase()
 	if (TargetingActionRef.Object)
 	{
 		TargetingAction = TargetingActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> TargetingSelfActionRef(TEXT("/Game/Input/IA_TargetingSelf.IA_TargetingSelf"));
+	if (TargetingSelfActionRef.Object)
+	{
+		TargetingSelfAction = TargetingSelfActionRef.Object;
 	}
 	
 	static ConstructorHelpers::FObjectFinder<UInputAction> CancelTargetingActionRef(TEXT("/Game/Input/IA_CancelTargeting.IA_CancelTargeting"));
@@ -180,6 +187,20 @@ AP4WCharacterBase::AP4WCharacterBase()
 
 	// Stat Component
 	Stat = CreateDefaultSubobject<UP4WCharacterStatComponent>(TEXT("Stat"));
+
+	// Widget Component
+	HpBar = CreateDefaultSubobject<UP4WWidgetComponent>(TEXT("Widget"));
+	HpBar->SetupAttachment(GetMesh());
+	HpBar->SetRelativeLocation(FVector(0.0f, 0.0f, 65.0f));
+	static ConstructorHelpers::FClassFinder<UUserWidget> HpBarWidgetRef(TEXT("/Game/UI/WBP_HpBar.WBP_HpBar_C"));
+	if (HpBarWidgetRef.Class)
+	{
+		HpBar->SetWidgetClass(HpBarWidgetRef.Class);
+		HpBar->SetWidgetSpace(EWidgetSpace::Screen);
+		HpBar->SetDrawSize(FVector2D(150.0f, 15.0f));
+		HpBar->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	HpBar->bHiddenInGame = true;
 
 	// Skill Component
 	Skill = CreateDefaultSubobject<USkillSystemComponent>(TEXT("Skill"));
@@ -360,6 +381,7 @@ void AP4WCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 		// Targeting
 		EnhancedInputComponent->BindAction(TargetingAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::Targeting);
+		EnhancedInputComponent->BindAction(TargetingSelfAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::TargetingSelf);
 		EnhancedInputComponent->BindAction(CancelTargetingAction, ETriggerEvent::Triggered, this, &AP4WCharacterBase::CancelTargeting);
 	}
 }
@@ -415,11 +437,33 @@ void AP4WCharacterBase::Zoom(const FInputActionValue& Value)
 void AP4WCharacterBase::Targeting(const FInputActionValue& Value)
 {
 	FindTarget();
+	if (HitTarget)
+	{
+		AP4WCharacterBase* HitTargetChar = Cast<AP4WCharacterBase>(HitTarget);
+		if (HitTargetChar)
+		{
+			HitTargetChar->HpBar->bHiddenInGame = false;
+		}
+	}
 	//ConeDetectWithDotProduct();
+}
+
+void AP4WCharacterBase::TargetingSelf(const FInputActionValue& Value)
+{
+	HitTarget = this;
+	if (HitTarget)
+	{
+		UE_LOG(LogTemp, Log, TEXT("최종 타겟 액터: %s"), *HitTarget->GetName());
+	}
 }
 
 void AP4WCharacterBase::CancelTargeting(const FInputActionValue& Value)
 {
+	AP4WCharacterBase* HitTargetChar = Cast<AP4WCharacterBase>(HitTarget);
+	if (HitTargetChar)
+	{
+		HitTargetChar->HpBar->bHiddenInGame = true;
+	}
 	HitTarget = nullptr;
 }
 
@@ -741,6 +785,11 @@ void AP4WCharacterBase::SetMaxEnmity(float Enmity)
 	//	ServerRPCSetMaxEnmity(Enmity);
 	//}
 	UE_LOG(LogTemp, Log, TEXT("[%s]Enmity: %f"), LOG_NETMODEINFO, GameInstance->MaxEnmity);
+}
+
+void AP4WCharacterBase::MulticastRPCHowlingAnimation_Implementation(UAnimMontage* Montage)
+{
+	GetMesh()->GetAnimInstance()->Montage_Play(Montage);
 }
 
 void AP4WCharacterBase::MulticastRPCPushAnimation_Implementation(UAnimMontage* Montage)

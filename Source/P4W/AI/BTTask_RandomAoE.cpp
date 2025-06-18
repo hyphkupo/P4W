@@ -58,7 +58,7 @@ EBTNodeResult::Type UBTTask_RandomAoE::ExecuteTask(UBehaviorTreeComponent& Owner
     //    }
     //}
 
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 10; ++i)
     {
         UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
         if (NavSys)
@@ -77,12 +77,18 @@ EBTNodeResult::Type UBTTask_RandomAoE::ExecuteTask(UBehaviorTreeComponent& Owner
     //FVector SpawnLocation = Origin + RandomOffset;
     //SpawnLocation.Z += 10.0f;
 
-    for (FVector Point : SpawnPointArray)
+    //for (FVector Point : SpawnPointArray)
+    //{
+    //    FActorSpawnParameters SpawnParams;
+    //    //Point.Z = 30.0f;
+    //    //AOEClass = AAOEField::StaticClass();
+    //    World->SpawnActor<AAOEField>(BP_AOE, Point, FRotator::ZeroRotator, SpawnParams);
+    //}
+    
+    for (int i = 0; i < 10; ++i)
     {
         FActorSpawnParameters SpawnParams;
-        //Point.Z = 30.0f;
-        //AOEClass = AAOEField::StaticClass();
-        World->SpawnActor<AAOEField>(BP_AOE, Point, FRotator::ZeroRotator, SpawnParams);
+        World->SpawnActor<AAOEField>(BP_AOE, SpawnPointArray[SpawnPointArray.Num() - i - 1], FRotator::ZeroRotator, SpawnParams);
     }
     SpawnPointArray.Empty();
 

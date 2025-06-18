@@ -158,17 +158,22 @@ protected:
 
 	void PlayHealUpAnimation(int32 Time);
 
-	// HealUp
+	// HealUp Animation RPC
 	UFUNCTION(Server, Unreliable)
-	void ServerRPCHealUp(int32 Time);
+	void ServerRPCHealUpAnimation(int32 Time);
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastRPCHealUp(int32 Time);
+	void MulticastRPCHealUpAnimation(int32 Time);
+
+	// HealUp RPC
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCHealUp(AP4WCharacterBase* Target);
+
+	//UFUNCTION(NetMulticast, Unreliable)
+	//void MulticastRPCHealUp();
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> HealUpMontage;
-
-	
 	
 };
