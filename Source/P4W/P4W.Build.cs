@@ -10,6 +10,6 @@ public class P4W : ModuleRules
 
         PublicIncludePaths.Add("P4W");
 
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "NavigationSystem", "AIModule", "GameplayTasks" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "NavigationSystem", "AIModule", "GameplayTasks", "OnlineSubsystemSteam", "OnlineSubsystem" });
 	}
 }
