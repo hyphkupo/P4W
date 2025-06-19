@@ -72,17 +72,22 @@ void UBTService_Detect::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 			AP4WBoss* BossPawn = Cast<AP4WBoss>(AIPawn);
 
 			UP4WGameInstance* GameInstance = Cast<UP4WGameInstance>(GetWorld()->GetGameInstance());
-			if (GameInstance)
-			{
+			/*if (GameInstance)
+			{*/
 				if (Pawn && Pawn->GetController()->IsPlayerController() && (PawnCharacter->Stat->GetCurrentEnmity() >= GameInstance->MaxEnmity))
 				{
 					bIsTarget = true;
-
+					if (PawnCharacter->bIsDead)
+					{
+						return;
+					}
 					OwnerComp.GetBlackboardComponent()->SetValueAsObject(BBKEY_TARGET, Pawn);
 					DrawDebugSphere(World, Center, DetectRadius, 16, FColor::Green, false, 0.2f);
 
 					DrawDebugPoint(World, Pawn->GetActorLocation(), 10.0f, FColor::Green, false, 0.2f);
 					DrawDebugLine(World, ControllingPawn->GetActorLocation(), Pawn->GetActorLocation(), FColor::Green, false, 0.27f);
+					UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), GameInstance->MaxEnmity);
+
 
 					//BossPawn->SetMaxEnmity(PawnCharacter->Stat->GetCurrentEnmity());
 					//CompareEnmity = BossPawn->MaxEnmity;
@@ -100,7 +105,7 @@ void UBTService_Detect::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 					//}
 				}
 			}
-		}
+		//}
 	}
 
 	if (!bIsTarget)

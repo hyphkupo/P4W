@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "Monster/P4WBoss.h"
+#include "Character/P4WCharacterPlayer_PLD.h"
 
 // Sets default values
 AAOEField::AAOEField()
@@ -71,7 +72,15 @@ void AAOEField::ApplyDamage()
             continue;
         }
 
-        UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, this, nullptr);
+        AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(Actor);
+        if (PLDPawn && PLDPawn->bIsSheltron)
+        {
+            UGameplayStatics::ApplyDamage(Actor, Damage * 0.85, nullptr, this, nullptr);
+        }
+        else
+        {
+            UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, this, nullptr);
+        }
     }
 
     Destroy();

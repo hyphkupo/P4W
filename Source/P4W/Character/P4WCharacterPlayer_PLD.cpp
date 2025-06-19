@@ -104,6 +104,7 @@ AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 	bCanPlayCombo3 = true;
 	bCanPlayHealUp = true;
 	bCanPlayProvoke = true;
+	bCanPlaySheltron = true;
 }
 
 void AP4WCharacterPlayer_PLD::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -476,21 +477,27 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 // RAction
 void AP4WCharacterPlayer_PLD::Sheltron(const FInputActionValue& Value)
 {
-	bIsSheltron = true;
-
-	FTimerHandle Handle;
-	GetWorld()->GetTimerManager().SetTimer(
-		Handle,
-		FTimerDelegate::CreateLambda([&]()
-			{
-				bIsSheltron = false;
-			}
-		), 6.0f, false
-	);
-
-	if (bCanAttack)
+	if (bCanPlaySheltron)
 	{
-		CooldownTime = 5.0f;
+		bIsSheltron = true;
+		bCanPlaySheltron = false;
+		CooldownTime = 10.0f;
+
+		GetWorld()->GetTimerManager().SetTimer(
+			SheltronHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					bIsSheltron = false;
+					bCanPlaySheltron = true;
+				}
+			), 6.0f, false
+		);
+	}
+
+	else
+	{
+		float ElapsedTime = GetWorldTimerManager().GetTimerElapsed(SheltronHandle);
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, FString::Printf(TEXT("Sheltron 쿨타임 도는 중 ... (%f / %f)"), ElapsedTime, CooldownTime));
 	}
 }
 
@@ -514,7 +521,14 @@ void AP4WCharacterPlayer_PLD::Provoke(const FInputActionValue& Value)
 		UP4WGameInstance* GameInstance = Cast<UP4WGameInstance>(GetGameInstance());
 		if (GameInstance)
 		{
-			GameInstance->MaxEnmity = Stat->GetCurrentEnmity();
+			if (HasAuthority())
+			{
+				GameInstance->MaxEnmity = Stat->GetCurrentEnmity();
+			}
+			else
+			{
+				ServerRPCMaxEnmity(this, Stat->GetCurrentEnmity());
+			}
 		}
 
 		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Current Enmity: %f"), GameInstance->MaxEnmity));
@@ -611,12 +625,28 @@ void AP4WCharacterPlayer_PLD::ServerRPCNotifyMiss_Implementation(FVector_NetQuan
 
 void AP4WCharacterPlayer_PLD::ServerRPCApplyDamage_Implementation(const FHitResult& HitResult, float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	HitResult.GetActor()->TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(HitResult.GetActor());
+	if (PLDPawn && PLDPawn->bIsSheltron)
+	{
+		HitResult.GetActor()->TakeDamage(Damage * 0.85, DamageEvent, EventInstigator, DamageCauser);
+	}
+	else
+	{
+		HitResult.GetActor()->TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	}
 }
 
 void AP4WCharacterPlayer_PLD::ServerRPCApplyTargetDamage_Implementation(AActor* Actor, float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	Actor->TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(Actor);
+	if (PLDPawn && PLDPawn->bIsSheltron)
+	{
+		Actor->TakeDamage(Damage * 0.85, DamageEvent, EventInstigator, DamageCauser);
+	}
+	else
+	{
+		Actor->TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	}
 }
 
 void AP4WCharacterPlayer_PLD::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
@@ -784,6 +814,16 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 					return;
 				}
 
+				//AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+				//if (PLDPawn && PLDPawn->bIsSheltron)
+				//{
+				//	HitTarget->TakeDamage(CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+				//}
+				//else
+				//{
+				//	HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+				//}
+
 				HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
 
 				//AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
@@ -828,8 +868,16 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 						return;
 					}
 
-					FDamageEvent DamageEvent;
-					UE_LOG(LogTemp, Log, TEXT("Sheltron1: %d"), bIsSheltron);
+					FDamageEvent DamageEvent; 
+					//AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(OutHitResult.GetActor());
+					//if (PLDPawn && PLDPawn->bIsSheltron)
+					//{
+					//	PLDPawn->TakeDamage(CurrentAttackDamage * 0.85, DamageEvent, GetController(), this);
+					//}
+					//else
+					//{
+					//	PLDPawn->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+					//}
 
 					OutHitResult.GetActor()->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
 
@@ -886,6 +934,17 @@ void AP4WCharacterPlayer_PLD::PlayHealUpAnimation(int32 Time)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->Montage_Play(HealUpMontage);
+}
+
+void AP4WCharacterPlayer_PLD::ServerRPCMaxEnmity_Implementation(AP4WCharacterBase* Target, float Enmity)
+{
+	UP4WGameInstance* GameInstance = Cast<UP4WGameInstance>(Target->GetGameInstance());
+	if (GameInstance)
+	{
+		GameInstance->MaxEnmity = Enmity;
+		UE_LOG(LogTemp, Log, TEXT("CurrentEnmity: %f"), Target->Stat->GetCurrentEnmity());
+		UE_LOG(LogTemp, Log, TEXT("CurrentEnmity2: %f"), GameInstance->MaxEnmity);
+	}
 }
 
 void AP4WCharacterPlayer_PLD::ServerRPCHealUp_Implementation(AP4WCharacterBase* Target)

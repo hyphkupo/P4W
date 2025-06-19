@@ -352,6 +352,20 @@ void AP4WCharacterPlayer_BLM::ThunderAttack(const FInputActionValue& Value)
 		}
 	}
 
+	AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
+	if (PLDPawn)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+		return;
+	}
+
+	AP4WCharacterPlayer_BLM* BLMPawn = Cast<AP4WCharacterPlayer_BLM>(HitTarget);
+	if (BLMPawn)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("플레이어는 공격할 수 없습니다"));
+		return;
+	}
+
 	if (bCanAttack && bCanPlayThunderAttack)
 	{
 		ProcessComboCommand();

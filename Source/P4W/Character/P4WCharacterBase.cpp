@@ -127,6 +127,12 @@ AP4WCharacterBase::AP4WCharacterBase()
 		ComboAttackMontage = ComboAttackMontageRef.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> DeadMontageRef(TEXT("/Game/Animation/AM_Dead.AM_Dead"));
+	if (DeadMontageRef.Object)
+	{
+		DeadMontage = DeadMontageRef.Object;
+	}
+
 	GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -27.5f));
 	GetMesh()->SetCollisionProfileName(TEXT("NoCollision"));
@@ -212,6 +218,8 @@ AP4WCharacterBase::AP4WCharacterBase()
 void AP4WCharacterBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+
+	Stat->OnHpZero.AddUObject(this, &AP4WCharacterBase::SetDead);
 }
 
 void AP4WCharacterBase::BeginPlay()
@@ -785,6 +793,36 @@ void AP4WCharacterBase::SetMaxEnmity(float Enmity)
 	//	ServerRPCSetMaxEnmity(Enmity);
 	//}
 	UE_LOG(LogTemp, Log, TEXT("[%s]Enmity: %f"), LOG_NETMODEINFO, GameInstance->MaxEnmity);
+}
+
+void AP4WCharacterBase::SetDead()
+{
+	bIsDead = true;
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	//APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	//if (PlayerController)
+	//{
+	//	DisableInput(PlayerController);
+	//}
+	PlayDeadAnimation();
+	SetActorEnableCollision(false);
+	HpBar->SetHiddenInGame(true);
+}
+
+void AP4WCharacterBase::PlayDeadAnimation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	AnimInstance->StopAllMontages(0.0f);
+	AnimInstance->Montage_Play(DeadMontage, 1.0f);
+}
+
+void AP4WCharacterBase::ServerRPCDeadAnimation_Implementation()
+{
+}
+
+void AP4WCharacterBase::MulticastRPCDeadAnimation_Implementation()
+{
+	
 }
 
 void AP4WCharacterBase::MulticastRPCHowlingAnimation_Implementation(UAnimMontage* Montage)

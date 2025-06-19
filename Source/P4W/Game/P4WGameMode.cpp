@@ -9,6 +9,9 @@
 #include "Player/P4WPlayerController.h"
 #include "Monster/P4WBoss.h"
 
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
+
 AP4WGameMode::AP4WGameMode()
 {
 	// set default pawn class to our Blueprinted character
@@ -64,6 +67,23 @@ void AP4WGameMode::RestartPlayerAtTransform(AController* NewPlayer, const FTrans
 
 void AP4WGameMode::BeginPlay()
 {
+	// 온라인 서브시스템 연결 확인용
+	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	if (OnlineSubsystem)
+	{
+		OnlineSubsystem->GetSessionInterface();
+
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.f,
+				FColor::Blue,
+				FString::Printf(TEXT("Found Subsystem %s"), *OnlineSubsystem->GetSubsystemName().ToString())
+			);
+		}
+	}
+
 	//const FTransform SpawnTransform(
 	//	GetActorLocation() + FVector::UpVector * 88.0f
 	//);

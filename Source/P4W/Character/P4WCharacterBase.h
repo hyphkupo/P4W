@@ -132,6 +132,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> ComboAttackMontage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAnimMontage> DeadMontage;
 
 public:
 	// 공격 가능 여부 판정
@@ -222,7 +225,19 @@ public:
 	void MulticastRPCHowlingAnimation(UAnimMontage* Montage);
 
 protected:
-	
+	void SetDead();
+
+	void PlayDeadAnimation();
+
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCDeadAnimation();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCDeadAnimation();
+
+public:
+	UPROPERTY()
+	uint8 bIsDead : 1;
 
 	//SanityFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SanityFXSystem, FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 60.0f));
 

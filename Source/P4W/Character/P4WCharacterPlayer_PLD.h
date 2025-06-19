@@ -153,8 +153,10 @@ protected:
 	uint8 bIsUsingSkill : 1;
 	uint8 bIsCasting : 1;
 	uint8 bCanPlayHealUp : 1;
+	uint8 bCanPlaySheltron : 1;
 
 	FTimerHandle CooldownHandle_HealUp;
+	FTimerHandle SheltronHandle;
 
 	void PlayHealUpAnimation(int32 Time);
 
@@ -175,5 +177,9 @@ protected:
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> HealUpMontage;
+
+protected:
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCMaxEnmity(AP4WCharacterBase* Target, float Enmity);
 	
 };

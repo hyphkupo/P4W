@@ -12,6 +12,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Physics/P4WCollision.h"
 #include "Components/CapsuleComponent.h"
+#include "Character/P4WCharacterBase.h"
+#include "Character/P4WCharacterPlayer_PLD.h"
 
 UBTTask_Charge::UBTTask_Charge()
 {
@@ -67,7 +69,21 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
         return EBTNodeResult::Failed;
     }
 
-    int32 Index = FMath::RandRange(0, Actors.Num() - 1);
+    int32 Index;
+    Index = FMath::RandRange(0, Actors.Num() - 1);
+    while (true)
+    {
+        AP4WCharacterBase* RanChar = Cast<AP4WCharacterBase>(Actors[Index]);
+        if (RanChar->bIsDead)
+        {
+            continue;
+        }
+        else
+        {
+            break;
+        }
+    }
+    
     ChosenActor = Actors[Index];
 
     DrawDebugSphere(World, ChosenActor->GetActorLocation(), 80.0f, 16, FColor::Red, false, 2.0f);
@@ -152,17 +168,36 @@ void UBTTask_Charge::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
     Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 
     float Dist = ChosenActor->GetDistanceTo(AIPawn);
-    if (Dist <= 200.0f)
+    if (Dist <= 150.0f)
     {
         MoveComp->MaxWalkSpeed = PrevSpeed;
-        UGameplayStatics::ApplyDamage(ChosenActor, Damage, AICon, AIChar, nullptr);
+
+        AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(ChosenActor);
+        if (PLDPawn && PLDPawn->bIsSheltron)
+        {
+            UGameplayStatics::ApplyDamage(ChosenActor, Damage * 0.85, AICon, AIChar, nullptr);
+        }
+        else
+        {
+            UGameplayStatics::ApplyDamage(ChosenActor, Damage, AICon, AIChar, nullptr);
+        }
+
         FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
         //return EBTNodeResult::Succeeded;
     }
 }
 
+// »ç¿ë x
 void UBTTask_Charge::ChargeComplete(ACharacter* Character, UCharacterMovementComponent* MMoveComp, float StoredPrevSpeed, AActor* DamagedActor)
 {
     MMoveComp->MaxWalkSpeed = StoredPrevSpeed;
-    UGameplayStatics::ApplyDamage(DamagedActor, Damage, nullptr, Character, nullptr);
+    AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(DamagedActor);
+    if (PLDPawn && PLDPawn->bIsSheltron)
+    {
+        UGameplayStatics::ApplyDamage(DamagedActor, Damage * 0.85, nullptr, Character, nullptr);
+    }
+    else
+    {
+        UGameplayStatics::ApplyDamage(DamagedActor, Damage, nullptr, Character, nullptr);
+    }
 }
