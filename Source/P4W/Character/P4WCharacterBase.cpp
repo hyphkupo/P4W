@@ -39,6 +39,8 @@
 #include "Monster/P4WBoss.h"
 #include "Game/P4WGameInstance.h"
 
+#include "NiagaraFunctionLibrary.h"
+
 //#include "GameFramework/PlayerStart.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -213,6 +215,13 @@ AP4WCharacterBase::AP4WCharacterBase()
 
 	bReplicates = true;
 	bCanAttack = true;
+
+	// VFX
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> TargetingVFXRef(TEXT("/Game/TrackMarker/Niagara/NotLooping/Basic/NS_Icon2D_Arrow_12.NS_Icon2D_Arrow_12"));
+	if (TargetingVFXRef.Object)
+	{
+		TargetingVFXSystem = TargetingVFXRef.Object;
+	}
 }
 
 void AP4WCharacterBase::PostInitializeComponents()
@@ -447,6 +456,11 @@ void AP4WCharacterBase::Targeting(const FInputActionValue& Value)
 	FindTarget();
 	if (HitTarget)
 	{
+		TargetingVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TargetingVFXSystem, HitTarget->GetActorLocation());
+		if (TargetingVFXComponent)
+		{
+			TargetingVFXComponent->Activate();
+		}
 		AP4WCharacterBase* HitTargetChar = Cast<AP4WCharacterBase>(HitTarget);
 		if (HitTargetChar)
 		{
@@ -461,6 +475,11 @@ void AP4WCharacterBase::TargetingSelf(const FInputActionValue& Value)
 	HitTarget = this;
 	if (HitTarget)
 	{
+		TargetingVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TargetingVFXSystem, HitTarget->GetActorLocation());
+		if (TargetingVFXComponent)
+		{
+			TargetingVFXComponent->Activate();
+		}
 		UE_LOG(LogTemp, Log, TEXT("최종 타겟 액터: %s"), *HitTarget->GetName());
 	}
 }
@@ -470,6 +489,7 @@ void AP4WCharacterBase::CancelTargeting(const FInputActionValue& Value)
 	AP4WCharacterBase* HitTargetChar = Cast<AP4WCharacterBase>(HitTarget);
 	if (HitTargetChar)
 	{
+		TargetingVFXComponent->Deactivate();
 		HitTargetChar->HpBar->bHiddenInGame = true;
 	}
 	HitTarget = nullptr;

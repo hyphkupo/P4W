@@ -157,6 +157,7 @@ void AP4WCharacterPlayer_BLM::AutoAttack(const FInputActionValue& Value)
 {
 	if (bCanAttack)
 	{
+		bIsUsingAutoAttack = true;
 		ProcessComboCommand();
 
 		bCanAttack = false;
@@ -169,6 +170,7 @@ void AP4WCharacterPlayer_BLM::AutoAttack(const FInputActionValue& Value)
 			FTimerDelegate::CreateLambda([&]()
 				{
 					bCanAttack = true;
+					bIsUsingAutoAttack = false;
 					NotifyComboActionEnd();
 				}
 			), 1.5f, false
@@ -700,6 +702,10 @@ void AP4WCharacterPlayer_BLM::AttackHitCheck()
 			// @Todo: 원거리 공격
 			if (HitTarget)
 			{
+				if (bIsUsingAutoAttack)
+				{
+					return;
+				}
 				FDamageEvent DamageEvent;
 				float CurrentAttackDamage;
 				if (bIsCasting)
@@ -767,6 +773,10 @@ void AP4WCharacterPlayer_BLM::AttackHitCheck()
 		{
 			if (HitTarget)
 			{
+				if (bIsUsingAutoAttack)
+				{
+					return;
+				}
 				FDamageEvent DamageEvent;
 				float CurrentAttackDamage;
 				if (bIsCasting)

@@ -85,12 +85,15 @@ EBTNodeResult::Type UBTTask_RandomAoE::ExecuteTask(UBehaviorTreeComponent& Owner
     //    World->SpawnActor<AAOEField>(BP_AOE, Point, FRotator::ZeroRotator, SpawnParams);
     //}
     
-    for (int i = 0; i < 10; ++i)
+    if (SpawnPointArray.Num() >= 10)
     {
-        FActorSpawnParameters SpawnParams;
-        World->SpawnActor<AAOEField>(BP_AOE, SpawnPointArray[SpawnPointArray.Num() - i - 1], FRotator::ZeroRotator, SpawnParams);
+        for (int i = 0; i < 10; ++i)
+        {
+            FActorSpawnParameters SpawnParams;
+            World->SpawnActor<AAOEField>(BP_AOE, SpawnPointArray[SpawnPointArray.Num() - i - 1], FRotator::ZeroRotator, SpawnParams);
+        }
+        SpawnPointArray.Empty();
     }
-    SpawnPointArray.Empty();
 
     return EBTNodeResult::Succeeded;
 }

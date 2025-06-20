@@ -12,12 +12,17 @@
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
 
+#include "Player/P4WPlayerStart.h"
+#include "Character/P4WCharacterPlayer_PLD.h"
+#include "Character/P4WCharacterPlayer_BLM.h"
+#include "Game/P4WGameInstance.h"
+
 AP4WGameMode::AP4WGameMode()
 {
 	// set default pawn class to our Blueprinted character
-	//rannum = FMath::RandRange(0, 2);
+	uint32 randnum = FMath::RandRange(0, 2);
 
-	//if (rannum == 0)
+	//if (randnum == 0)
 	//{
 	//	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PLDPlayer.BP_PLDPlayer_C"));
 	//	if (PlayerPawnBPClass.Class != NULL)
@@ -33,12 +38,13 @@ AP4WGameMode::AP4WGameMode()
 	//		DefaultPawnClass = PlayerPawnBPClass.Class;
 	//	}
 	//}
+	//DefaultPawnClass = LastChosenPawnClass;
 
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PLDPlayer.BP_PLDPlayer_C"));
-	if (PlayerPawnBPClass.Class != NULL)
-	{
-		DefaultPawnClass = PlayerPawnBPClass.Class;
-	}
+	//static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PLDPlayer.BP_PLDPlayer_C"));
+	//if (PlayerPawnBPClass.Class != NULL)
+	//{
+	//	DefaultPawnClass = PlayerPawnBPClass.Class;
+	//}
 
 	static ConstructorHelpers::FClassFinder<APlayerController> PlayerControllerBPClass(TEXT("/Game/Blueprint/BP_P4WPlayerController.BP_P4WPlayerController_C"));
 	if (PlayerControllerBPClass.Class != NULL)
@@ -93,7 +99,62 @@ void AP4WGameMode::BeginPlay()
 	//GetWorld()->SpawnActor(AABCharacterNonPlayer::StaticClass());
 	// NPC »ý¼º.
 	//AP4WBoss* P4WBoss = GetWorld()->SpawnActorDeferred<AP4WBoss>(AP4WBoss::StaticClass(), SpawnTransform);
-	AP4WBoss* P4WBoss = GetWorld()->SpawnActor<AP4WBoss>();
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AP4WBoss* P4WBoss = GetWorld()->SpawnActor<AP4WBoss>(AP4WBoss::StaticClass(), FVector(4890.000000, -1340.000000, 195.000000), FRotator::ZeroRotator, SpawnParams);
+	// ObjectClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams
+}
+
+AActor* AP4WGameMode::ChoosePlayerStart_Implementation(AController* Player)
+{
+	for (TActorIterator<AP4WPlayerStart> It(GetWorld()); It; ++It)
+	{
+		UP4WGameInstance* GameInstance = Cast<UP4WGameInstance>(GetGameInstance());
+		if (GameInstance)
+		{
+			AP4WPlayerStart* CustomStart = *It;
+			if (IsValid(CustomStart))
+			{
+				float RandNum = FMath::RandRange(0, 1);
+				if (RandNum <= 0.5f)
+				{
+					LastChosenPawnClass = CustomStart->CustomPLDClass;
+					++(GameInstance->StartNum);
+
+					return CustomStart;
+				}
+				else
+				{
+					LastChosenPawnClass = CustomStart->CustomBLMClass;
+					++(GameInstance->StartNum);
+
+					return CustomStart;
+				}
+			}
+		}
+	}
+
+	LastChosenPawnClass = nullptr;
+	return Super::ChoosePlayerStart_Implementation(Player);
+}
+
+APawn* AP4WGameMode::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
+{
+	if (LastChosenPawnClass)
+	{
+		return GetWorld()->SpawnActor<APawn>(
+			LastChosenPawnClass,
+			StartSpot->GetActorLocation(),
+			StartSpot->GetActorRotation()
+		);
+	}
+
+	TSubclassOf<APawn> DefaultClass = GetDefaultPawnClassForController(NewPlayer);
+	return GetWorld()->SpawnActor<APawn>(
+		DefaultClass,
+		StartSpot->GetActorLocation(),
+		StartSpot->GetActorRotation()
+	);
 }
 
 //void AP4WGameMode::RestartPlayer(AController* NewPlayer)

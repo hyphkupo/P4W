@@ -184,6 +184,7 @@ protected:
 	uint8 bIsAnyKeyPressed : 1;
 	uint8 bIsCasting : 1;
 	uint8 bIsUsingSkill : 1;
+	uint8 bIsUsingAutoAttack : 1;
 
 public:
 	FTimerHandle CooldownHandle_BlizzardAttack;

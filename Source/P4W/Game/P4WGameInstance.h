@@ -44,5 +44,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void JoinServer();
+
+public:
+	uint32 StartNum = 0;
 	
 };

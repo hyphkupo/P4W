@@ -788,6 +788,7 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 		{
 			if (HitTarget)
 			{
+				/*
 				FDamageEvent DamageEvent;
 				float CurrentAttackDamage;
 				if (bIsInCombo)
@@ -814,6 +815,7 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 					return;
 				}
 
+
 				//AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
 				//if (PLDPawn && PLDPawn->bIsSheltron)
 				//{
@@ -825,6 +827,7 @@ void AP4WCharacterPlayer_PLD::AttackHitCheck()
 				//}
 
 				HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
+				*/
 
 				//AP4WCharacterPlayer_PLD* GetHitActorTarget = Cast<AP4WCharacterPlayer_PLD>(HitTarget);
 				//if (GetHitActorTarget->bIsSheltron)

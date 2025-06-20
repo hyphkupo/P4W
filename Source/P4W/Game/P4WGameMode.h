@@ -48,4 +48,12 @@ protected:
 
 	int32 rannum;
 
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot) override;
+
+private:
+	UPROPERTY()
+	TSubclassOf<APawn> LastChosenPawnClass;
+	//uint32 StartNum = 0;
+
 };

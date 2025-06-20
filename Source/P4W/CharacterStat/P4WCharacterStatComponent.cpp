@@ -25,8 +25,6 @@ void UP4WCharacterStatComponent::InitializeComponent()
 	OnStatChanged.AddUObject(this, &UP4WCharacterStatComponent::SetNewMaxMp);
 
 	SetIsReplicated(true);
-
-	CurrentHp = 20.0f;
 }
 
 float UP4WCharacterStatComponent::ApplyDamage(float InDamage)

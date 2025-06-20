@@ -9,6 +9,8 @@
 #include "UI/P4WUserWidget.h"
 #include "Interface/P4WCharacterWidgetInterface.h"
 #include "Interface/P4WAnimationAttackInterface.h"
+#include "NiagaraSystem.h"
+#include "NiagaraComponent.h"
 #include "P4WCharacterBase.generated.h"
 
 class USpringArmComponent;
@@ -240,5 +242,12 @@ public:
 	uint8 bIsDead : 1;
 
 	//SanityFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SanityFXSystem, FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 60.0f));
+
+public:
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default")
+	UNiagaraSystem* TargetingVFXSystem;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default")
+	UNiagaraComponent* TargetingVFXComponent;
 
 };
