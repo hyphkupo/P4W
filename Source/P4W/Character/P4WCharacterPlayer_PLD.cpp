@@ -36,6 +36,9 @@
 
 #include "Character/P4WCharacterPlayer_BLM.h"
 
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+
 AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 {
 	//static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMesh(TEXT(""))
@@ -105,6 +108,19 @@ AP4WCharacterPlayer_PLD::AP4WCharacterPlayer_PLD()
 	bCanPlayHealUp = true;
 	bCanPlayProvoke = true;
 	bCanPlaySheltron = true;
+
+	// VFX
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SheltronVFXRef(TEXT("/Game/TrackMarker/Niagara/Looping/3Dicon/NS_Icon3D_5.NS_Icon3D_5"));
+	if (SheltronVFXRef.Object)
+	{
+		SheltronVFXSystem = SheltronVFXRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> HealUpVFXRef(TEXT("/Game/High_Recovery_VFX/VFX/NS_High_Recovery.NS_High_Recovery"));
+	if (HealUpVFXRef.Object)
+	{
+		HealUpVFXSystem = HealUpVFXRef.Object;
+	}
 }
 
 void AP4WCharacterPlayer_PLD::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -405,7 +421,7 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 	if (bCanAttack && bCanPlayHealUp)
 	{
 		bIsUsingSkill = true;
-		CooldownTime = 2.5f;
+		CooldownTime = 2.0f;
 		CurrentDamage = 18.0f;
 		bCanAttack = false;
 
@@ -442,9 +458,31 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 			), CastingTime, false
 		);
 
+		FTimerHandle HealUpVFXHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			HealUpVFXHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					HealUpVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HealUpVFXSystem, HitTarget->GetActorLocation());
+					if (HealUpVFXComponent)
+					{
+						if (HasAuthority())
+						{
+							HealUpVFXComponent->Activate();
+							MulticastRPCHealUpVFX(HealUpVFXSystem, HitTarget);
+						}
+						else
+						{
+							HealUpVFXComponent->Activate();
+							ServerRPCHealUpVFX(HealUpVFXSystem, HitTarget);
+						}
+					}
+				}
+			), CastingTime - 0.5f, false
+		);
+
 		//PlayFireAttackAnimation();
 		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-
 
 		GetWorld()->GetTimerManager().SetTimer(
 			CooldownHandle_HealUp,
@@ -455,6 +493,7 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 			), CooldownTime, false
 		);
 
+		/*
 		//UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
 
 		//if (bIsCasting && bIsAnyKeyPressed)
@@ -466,6 +505,7 @@ void AP4WCharacterPlayer_PLD::HealUp(const FInputActionValue& Value)
 
 		//	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 		//}
+		*/
 
 		ServerRPCHealUpAnimation(CastingTime);
 	}
@@ -479,6 +519,21 @@ void AP4WCharacterPlayer_PLD::Sheltron(const FInputActionValue& Value)
 {
 	if (bCanPlaySheltron)
 	{
+		SheltronVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			SheltronVFXSystem, 
+			GetMesh(), 
+			NAME_None, 
+			FVector(0.0f, 0.0f, 80.0f), 
+			FRotator::ZeroRotator, 
+			EAttachLocation::KeepRelativeOffset,
+			true
+		);
+
+		if (SheltronVFXComponent)
+		{
+			SheltronVFXComponent->Activate();
+		}
+
 		bIsSheltron = true;
 		bCanPlaySheltron = false;
 		CooldownTime = 10.0f;
@@ -491,6 +546,19 @@ void AP4WCharacterPlayer_PLD::Sheltron(const FInputActionValue& Value)
 					bCanPlaySheltron = true;
 				}
 			), 6.0f, false
+		);
+
+		FTimerHandle SheltronVFXHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			SheltronVFXHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					if (SheltronVFXComponent)
+					{
+						SheltronVFXComponent->Deactivate();
+					}
+				}
+			), 0.5f, false
 		);
 	}
 
@@ -937,6 +1005,17 @@ void AP4WCharacterPlayer_PLD::PlayHealUpAnimation(int32 Time)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->Montage_Play(HealUpMontage);
+}
+
+void AP4WCharacterPlayer_PLD::ServerRPCHealUpVFX_Implementation(UNiagaraSystem* NS, AActor* HealActor)
+{
+	MulticastRPCHealUpVFX(NS, HealActor);
+}
+
+void AP4WCharacterPlayer_PLD::MulticastRPCHealUpVFX_Implementation(UNiagaraSystem* NS, AActor* HealActor)
+{
+	HealUpVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NS, HealActor->GetActorLocation());
+	HealUpVFXComponent->Activate();
 }
 
 void AP4WCharacterPlayer_PLD::ServerRPCMaxEnmity_Implementation(AP4WCharacterBase* Target, float Enmity)

@@ -40,6 +40,9 @@ AP4WBoss::AP4WBoss()
 	HpBar->SetRelativeLocation(FVector(0.0f, 0.0f, 75.0f));
 	HpBar->SetDrawSize(FVector2D(700.0f, 20.0f));
 
+	//HpBar->bHiddenInGame = false;
+
+	
 }
 
 void AP4WBoss::BeginPlay()

@@ -138,6 +138,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> DeadMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAnimMontage> DeadBossMontage;
+
 public:
 	// 공격 가능 여부 판정
 	UPROPERTY(Replicated)
@@ -244,10 +247,10 @@ public:
 	//SanityFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SanityFXSystem, FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 60.0f));
 
 public:
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default")
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
 	UNiagaraSystem* TargetingVFXSystem;
 
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Default")
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
 	UNiagaraComponent* TargetingVFXComponent;
 
 };

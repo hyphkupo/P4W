@@ -22,6 +22,9 @@
 
 #include "Character/P4WCharacterPlayer_PLD.h"
 
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+
 AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 {
 	// Attack Input
@@ -105,6 +108,13 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 	bCanPlayThunderAttack = true;
 	bCanPlayFireBallAttack = true;
 	bCanPlayManafont = true;
+
+	// VFX
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> ManafontVFXRef(TEXT("/Game/High_Recovery_VFX/VFX/NS_High_Recovery_Owner.NS_High_Recovery_Owner"));
+	if (ManafontVFXRef.Object)
+	{
+		ManafontVFXSystem = ManafontVFXRef.Object;
+	}
 }
 
 void AP4WCharacterPlayer_BLM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -504,6 +514,34 @@ void AP4WCharacterPlayer_BLM::Manafont(const FInputActionValue& Value)
 
 	if (bCanAttack && bCanPlayManafont)
 	{
+		ManafontVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			ManafontVFXSystem,
+			GetMesh(),
+			NAME_None,
+			FVector(0.0f, 0.0f, 60.0f),
+			FRotator::ZeroRotator,
+			EAttachLocation::KeepRelativeOffset,
+			true
+		);
+
+		if (ManafontVFXComponent)
+		{
+			ManafontVFXComponent->Activate();
+		}
+
+		FTimerHandle ManafontVFXHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			ManafontVFXHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					if (ManafontVFXComponent)
+					{
+						ManafontVFXComponent->Deactivate();
+					}
+				}
+			), 0.5f, false
+		);
+
 		Stat->SetMpMax();
 
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);

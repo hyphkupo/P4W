@@ -181,5 +181,26 @@ protected:
 protected:
 	UFUNCTION(Server, Unreliable)
 	void ServerRPCMaxEnmity(AP4WCharacterBase* Target, float Enmity);
+
+// VFX
+protected:
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraSystem* SheltronVFXSystem;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraComponent* SheltronVFXComponent;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraSystem* HealUpVFXSystem;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraComponent* HealUpVFXComponent;
+
+protected:
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCHealUpVFX(UNiagaraSystem* NS, AActor* HealActor);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCHealUpVFX(UNiagaraSystem* NS, AActor* HealActor);
 	
 };

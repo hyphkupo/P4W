@@ -41,6 +41,9 @@
 
 #include "NiagaraFunctionLibrary.h"
 
+#include "AIController.h"
+#include "BehaviorTree/BehaviorTree.h"
+
 //#include "GameFramework/PlayerStart.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -133,6 +136,12 @@ AP4WCharacterBase::AP4WCharacterBase()
 	if (DeadMontageRef.Object)
 	{
 		DeadMontage = DeadMontageRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> DeadBossMontageRef(TEXT("/Game/Animation/AM_DeadBoss.AM_DeadBoss"));
+	if (DeadBossMontageRef.Object)
+	{
+		DeadBossMontage = DeadBossMontageRef.Object;
 	}
 
 	GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
@@ -456,7 +465,21 @@ void AP4WCharacterBase::Targeting(const FInputActionValue& Value)
 	FindTarget();
 	if (HitTarget)
 	{
-		TargetingVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TargetingVFXSystem, HitTarget->GetActorLocation());
+		AP4WCharacterBase* Char = Cast<AP4WCharacterBase>(HitTarget);
+		if (Char)
+		{
+			TargetingVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+				TargetingVFXSystem,
+				Char->GetMesh(),
+				NAME_None,
+				FVector(0.0f, 0.0f, 50.0f),
+				FRotator::ZeroRotator,
+				EAttachLocation::KeepRelativeOffset,
+				true
+			);
+		}
+
+		//TargetingVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TargetingVFXSystem, HitTarget->GetActorLocation());
 		if (TargetingVFXComponent)
 		{
 			TargetingVFXComponent->Activate();
@@ -475,7 +498,21 @@ void AP4WCharacterBase::TargetingSelf(const FInputActionValue& Value)
 	HitTarget = this;
 	if (HitTarget)
 	{
-		TargetingVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TargetingVFXSystem, HitTarget->GetActorLocation());
+		AP4WCharacterBase* Char = Cast<AP4WCharacterBase>(HitTarget);
+		if (Char)
+		{
+			TargetingVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+				TargetingVFXSystem,
+				Char->GetMesh(),
+				NAME_None,
+				FVector(0.0f, 0.0f, 50.0f),
+				FRotator::ZeroRotator,
+				EAttachLocation::KeepRelativeOffset,
+				true
+			);
+		}
+
+		//TargetingVFXComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TargetingVFXSystem, HitTarget->GetActorLocation());
 		if (TargetingVFXComponent)
 		{
 			TargetingVFXComponent->Activate();
@@ -827,13 +864,34 @@ void AP4WCharacterBase::SetDead()
 	PlayDeadAnimation();
 	SetActorEnableCollision(false);
 	HpBar->SetHiddenInGame(true);
+	AP4WBoss* BossPawn = Cast<AP4WBoss>(this);
+	if (BossPawn)
+	{
+		AAIController* AIController = Cast<AAIController>(GetController());
+		if (AIController)
+		{
+			UBrainComponent* Brain = AIController->GetBrainComponent();
+			if (Brain)
+			{
+				Brain->StopLogic(TEXT("Stop BT from code"));
+			}
+		}
+	}
 }
 
 void AP4WCharacterBase::PlayDeadAnimation()
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->StopAllMontages(0.0f);
-	AnimInstance->Montage_Play(DeadMontage, 1.0f);
+	AP4WBoss* BossPawn = Cast<AP4WBoss>(this);
+	if (BossPawn)
+	{
+		AnimInstance->Montage_Play(DeadBossMontage, 1.0f);
+	}
+	else
+	{
+		AnimInstance->Montage_Play(DeadMontage, 1.0f);
+	}
 }
 
 void AP4WCharacterBase::ServerRPCDeadAnimation_Implementation()

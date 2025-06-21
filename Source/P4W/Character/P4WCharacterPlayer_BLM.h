@@ -220,4 +220,12 @@ protected:
 	void RepeatingDamage(uint32 Num);
 
 	uint8 bIsThunder : 1;
+
+	// VFX
+protected:
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraSystem* ManafontVFXSystem;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraComponent* ManafontVFXComponent;
 };
