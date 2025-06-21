@@ -24,6 +24,7 @@
 
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "Skill/MagicProjectile.h"
 
 AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 {
@@ -115,6 +116,39 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 	{
 		ManafontVFXSystem = ManafontVFXRef.Object;
 	}
+
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BlizzardTrailEffectRef(TEXT("/Game/Ultimate_Magic_Bundle/MagicProjectiles/Niagara/Ice/NS_Ice_Trail.NS_Ice_Trail"));
+	if (BlizzardTrailEffectRef.Object)
+	{
+		BlizzardTrailEffect = BlizzardTrailEffectRef.Object;
+	}
+	
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BlizzardImpactEffectRef(TEXT("/Game/Ultimate_Magic_Bundle/AEO_Abilities/MagicAEO/Niagara/Ice/NS_IceAEO.NS_IceAEO"));
+	if (BlizzardImpactEffectRef.Object)
+	{
+		BlizzardImpactEffect = BlizzardImpactEffectRef.Object;
+	}
+	
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> FireImpactEffectRef(TEXT("/Game/Ultimate_Magic_Bundle/AEO_Abilities/MagicAEO/Niagara/Ice/NS_IceAEO.NS_IceAEO"));
+	if (FireImpactEffectRef.Object)
+	{
+		FireImpactEffect = FireImpactEffectRef.Object;
+	}
+	
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> ThunderImpactEffectRef(TEXT("/Game/Ultimate_Magic_Bundle/AEO_Abilities/MagicAEO/Niagara/Lightning/NS_LightningAEO.NS_LightningAEO"));
+	if (ThunderImpactEffectRef.Object)
+	{
+		ThunderImpactEffect = ThunderImpactEffectRef.Object;
+	}
+	
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> FireBallImpactEffectRef(TEXT("/Game/Ultimate_Magic_Bundle/AEO_Abilities/MagicAEO/Niagara/Fire/NS_FireAEO.NS_FireAEO"));
+	if (FireBallImpactEffectRef.Object)
+	{
+		FireBallImpactEffect = FireBallImpactEffectRef.Object;
+	}
+
+	//MagicProjectileClass.niaga
+
 }
 
 void AP4WCharacterPlayer_BLM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -243,26 +277,75 @@ void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 
 		PlayFireAttackAnimation(CastingTime);
 
+		FVector Start = this->GetActorLocation();
+		FVector Target = HitTarget->GetActorLocation();
+		FVector Dir = (Target - Start).GetSafeNormal();
+
+		Spell = GetWorld()->SpawnActor<AMagicProjectile>(
+			MagicProjectileClass,
+			Start,
+			Dir.Rotation()
+		);
+
+		//Spell->LaunchProjectile(Dir, HitTarget);
+
 		GetWorld()->GetTimerManager().SetTimer(
 			CooldownHandle_BlizzardAttack,
 			FTimerDelegate::CreateLambda([&]()
 				{
 					bCanPlayBlizzardAttack = true;
+
+					ACharacter* Char = Cast<ACharacter>(HitTarget);
+
+					BlizzardImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+						BlizzardImpactEffect,
+						Char->GetMesh(),
+						NAME_None,
+						FVector(0.0f, 0.0f, 0.0f),
+						FRotator::ZeroRotator,
+						EAttachLocation::KeepRelativeOffset,
+						true
+					);
+
+					if (BlizzardImpactEffectComponent)
+					{
+						if (HasAuthority())
+						{
+							MulticastRPCBlizzardVFX(BlizzardImpactEffect, HitTarget);
+						}
+						else
+						{
+							ServerRPCBlizzardVFX(BlizzardImpactEffect, HitTarget);
+						}
+					}
 				}
 			), CooldownTime, false
 		);
 
+		FTimerHandle BlizzardVFXHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			BlizzardVFXHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					if (BlizzardImpactEffectComponent)
+					{
+						BlizzardImpactEffectComponent->Deactivate();
+					}
+				}
+			), CooldownTime + 2.0f, false
+		);
+
 		UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
 
-		if (bIsCasting && bIsAnyKeyPressed)
-		{
-			UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
-			//AnimInstance->StopAllMontages(0.5f);
-			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-			AnimInstance->Montage_Stop(0.0f, FireAttackMontage);		// 수정
+		//if (bIsCasting && bIsAnyKeyPressed)
+		//{
+		//	UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+		//	//AnimInstance->StopAllMontages(0.5f);
+		//	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		//	AnimInstance->Montage_Stop(0.0f, FireAttackMontage);		// 수정
 
-			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-		}
+		//	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		//}
 
 		ServerRPCFireAttack(CastingTime);
 	}
@@ -318,10 +401,32 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 
 		Stat->ApplyUseMp(800.0f);
 
+		
+
 		//PlayFireAttackAnimation();
 		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
 		PlayFireAttackAnimation(CastingTime);
+
+		FTimerHandle FireVFXHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			FireVFXHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					if (HasAuthority())
+					{
+						//Projectile->LaunchToTarget(HitTarget);
+
+						MulticastRPCFireVFX(ThunderImpactEffect, HitTarget);
+					}
+					else
+					{
+						ServerRPCFireVFX(ThunderImpactEffect, HitTarget);
+					}
+					
+				}
+			), CastingTime, false
+		);
 
 		GetWorld()->GetTimerManager().SetTimer(
 			CooldownHandle_FireAttack,
@@ -334,15 +439,15 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 
 		UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
 
-		if (bIsCasting && bIsAnyKeyPressed)
-		{
-			UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
-			//AnimInstance->StopAllMontages(0.5f);
-			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-			AnimInstance->Montage_Stop(0.0f, FireAttackMontage);
+		//if (bIsCasting && bIsAnyKeyPressed)
+		//{
+		//	UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+		//	//AnimInstance->StopAllMontages(0.5f);
+		//	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		//	AnimInstance->Montage_Stop(0.0f, FireAttackMontage);
 
-			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-		}
+		//	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		//}
 
 		ServerRPCFireAttack(CastingTime);
 	}
@@ -380,6 +485,33 @@ void AP4WCharacterPlayer_BLM::ThunderAttack(const FInputActionValue& Value)
 
 	if (bCanAttack && bCanPlayThunderAttack)
 	{
+		ACharacter* Char = Cast<ACharacter>(HitTarget);
+
+		ThunderImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			ThunderImpactEffect,
+			Char->GetMesh(),
+			NAME_None,
+			FVector(0.0f, 0.0f, 0.0f),
+			FRotator::ZeroRotator,
+			EAttachLocation::KeepRelativeOffset,
+			true
+		);
+
+		//ThunderImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ThunderImpactEffect, HitTarget->GetActorLocation());
+		if (ThunderImpactEffectComponent)
+		{
+			if (HasAuthority())
+			{
+				//ThunderImpactEffectComponent->Activate();
+				MulticastRPCThunderVFX(ThunderImpactEffect, HitTarget);
+			}
+			else
+			{
+				//ThunderImpactEffectComponent->Activate();
+				ServerRPCThunderVFX(ThunderImpactEffect, HitTarget);
+			}
+		}
+
 		ProcessComboCommand();
 
 		CooldownTime = 2.5f;
@@ -400,6 +532,10 @@ void AP4WCharacterPlayer_BLM::ThunderAttack(const FInputActionValue& Value)
 			FTimerDelegate::CreateLambda([&]()
 				{
 					bCanPlayThunderAttack = true;
+					if (ThunderImpactEffectComponent)
+					{
+						ThunderImpactEffectComponent->Deactivate();
+					}
 				}
 			), CooldownTime, false
 		);
@@ -488,17 +624,66 @@ void AP4WCharacterPlayer_BLM::FireBallAttack(const FInputActionValue& Value)
 			), CooldownTime, false
 		);
 
+		FTimerHandle ImpactHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownHandle_FireBallAttack,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					ACharacter* Char = Cast<ACharacter>(HitTarget);
+
+					FireBallImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+						FireBallImpactEffect,
+						Char->GetMesh(),
+						NAME_None,
+						FVector::ZeroVector,
+						FRotator::ZeroRotator,
+						EAttachLocation::SnapToTargetIncludingScale,
+						true
+					);
+
+					//FireBallImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireBallImpactEffect, HitTarget->GetActorLocation());
+					if (FireBallImpactEffectComponent)
+					{
+						if (HasAuthority())
+						{
+							//FireBallImpactEffectComponent->Activate();
+							MulticastRPCFireBallVFX(FireBallImpactEffect, HitTarget);
+						}
+						else
+						{
+							//FireBallImpactEffectComponent->Activate();
+							ServerRPCFireBallVFX(FireBallImpactEffect, HitTarget);
+						}
+					}
+				}
+			), CooldownTime + 1.0f, false
+		);
+		
+
+		FTimerHandle FireBallVFXHandle;
+		GetWorld()->GetTimerManager().SetTimer(
+			FireBallVFXHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					if (FireBallImpactEffectComponent)
+					{
+						FireBallImpactEffectComponent->Deactivate();
+					}
+				}
+			), CooldownTime + 2.0f, false
+		);
+
 		UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
 
-		if (bIsCasting && bIsAnyKeyPressed)
-		{
-			UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
-			//AnimInstance->StopAllMontages(0.5f);
-			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-			AnimInstance->Montage_Stop(0.0f, FireBallAttackMontage);
+		//if (bIsCasting && bIsAnyKeyPressed)
+		//{
+		//	UE_LOG(LogTemp, Log, TEXT("bIsCasting: %d, bIsAnyKeyPressed: %d"), bIsCasting, bIsAnyKeyPressed);
+		//	//AnimInstance->StopAllMontages(0.5f);
+		//	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		//	AnimInstance->Montage_Stop(0.0f, FireBallAttackMontage);
 
-			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-		}
+		//	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		//}
 
 		ServerRPCFireBallAttack(CastingTime);
 	}
@@ -1230,6 +1415,152 @@ void AP4WCharacterPlayer_BLM::RepeatingDamage(uint32 Num)
 	ServerRPCApplyTargetDamage(DotHitTarget, Potency, DamageEvent, GetController(), this);
 }
 
+void AP4WCharacterPlayer_BLM::SpawnBlizzardTrailEffect(AActor* TargetActor)
+{
+	if (BlizzardTrailEffect && TargetActor)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAttached(
+			BlizzardTrailEffect,
+			TargetActor->GetRootComponent(),
+			NAME_None,
+			FVector::ZeroVector,
+			FRotator::ZeroRotator,
+			EAttachLocation::KeepRelativeOffset,
+			true
+		);
+	}
+}
+
+void AP4WCharacterPlayer_BLM::ServerRPCBlizzardVFX_Implementation(UNiagaraSystem* NS, AActor* DamagedActor)
+{
+	ACharacter* Char = Cast<ACharacter>(DamagedActor);
+
+	BlizzardImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		NS,
+		Char->GetMesh(),
+		NAME_None,
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		EAttachLocation::SnapToTargetIncludingScale,
+		true
+	);
+}
+
+void AP4WCharacterPlayer_BLM::MulticastRPCBlizzardVFX_Implementation(UNiagaraSystem* NS, AActor* DamagedActor)
+{
+	ACharacter* Char = Cast<ACharacter>(DamagedActor);
+
+	BlizzardImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		NS,
+		Char->GetMesh(),
+		NAME_None,
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		EAttachLocation::SnapToTargetIncludingScale,
+		true
+	);
+	ServerRPCFireVFX(NS, DamagedActor);
+}
+
+void AP4WCharacterPlayer_BLM::ServerRPCFireVFX_Implementation(UNiagaraSystem* NS, AActor* DamagedActor)
+{
+	if (MagicProjectileClass && DamagedActor)
+	{
+		FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 100.f;
+		FRotator SpawnRotation = (DamagedActor->GetActorLocation() - SpawnLocation).Rotation();
+
+		AMagicProjectile* Projectile = GetWorld()->SpawnActor<AMagicProjectile>(MagicProjectileClass, SpawnLocation, SpawnRotation);
+		if (Projectile)
+		{
+			Projectile->LaunchToTarget(DamagedActor);
+		}
+	}
+}
+
+void AP4WCharacterPlayer_BLM::MulticastRPCFireVFX_Implementation(UNiagaraSystem* NS, AActor* DamagedActor)
+{
+	// Projectile 발사
+	if (MagicProjectileClass && DamagedActor)
+	{
+		FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 100.f;
+		FRotator SpawnRotation = (DamagedActor->GetActorLocation() - SpawnLocation).Rotation();
+
+		AMagicProjectile* Projectile = GetWorld()->SpawnActor<AMagicProjectile>(MagicProjectileClass, SpawnLocation, SpawnRotation);
+		if (Projectile)
+		{
+			Projectile->LaunchToTarget(DamagedActor);
+		}
+	}
+}
+
+void AP4WCharacterPlayer_BLM::ServerRPCThunderVFX_Implementation(UNiagaraSystem* NS, AActor* DamagedActor)
+{
+	ACharacter* Char = Cast<ACharacter>(DamagedActor);
+
+	ThunderImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		NS,
+		Char->GetMesh(),
+		NAME_None,
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		EAttachLocation::SnapToTargetIncludingScale,
+		true
+	);
+}
+
+void AP4WCharacterPlayer_BLM::MulticastRPCThunderVFX_Implementation(UNiagaraSystem* NS, AActor* DamagedActor)
+{
+	ACharacter* Char = Cast<ACharacter>(DamagedActor);
+
+	ThunderImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		NS,
+		Char->GetMesh(),
+		NAME_None,
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		EAttachLocation::SnapToTargetIncludingScale,
+		true
+	);
+
+	//ThunderImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NS, DamagedActor->GetActorLocation());
+	//ThunderImpactEffectComponent->Activate();
+}
+
+void AP4WCharacterPlayer_BLM::ServerRPCFireBallVFX_Implementation(UNiagaraSystem* NS, AActor* DamagedActor)
+{
+	ACharacter* Char = Cast<ACharacter>(DamagedActor);
+
+	FireBallImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		NS,
+		Char->GetMesh(),
+		NAME_None,
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		EAttachLocation::SnapToTargetIncludingScale,
+		true
+	);
+
+	//MulticastRPCFireBallVFX(NS, DamagedActor);
+}
+
+void AP4WCharacterPlayer_BLM::MulticastRPCFireBallVFX_Implementation(UNiagaraSystem* NS, AActor* DamagedActor)
+{
+	ACharacter* Char = Cast<ACharacter>(DamagedActor);
+
+	FireBallImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		NS,
+		Char->GetMesh(),
+		NAME_None,
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		EAttachLocation::SnapToTargetIncludingScale,
+		true
+	);
+
+	//FireBallImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NS, DamagedActor->GetActorLocation());
+	//FireBallImpactEffectComponent->Activate();
+}
+
 void AP4WCharacterPlayer_BLM::PlayBlizzardAttackAnimation(int32 Time)
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
@@ -1242,6 +1573,8 @@ void AP4WCharacterPlayer_BLM::PlayBlizzardAttackAnimation(int32 Time)
 		Handle,
 		FTimerDelegate::CreateLambda([&]()
 			{
+				//SpawnBlizzardImpactEffect(HitTarget->GetActorLocation(), HitTarget->GetActorLocation());
+
 				bIsCasting = false;
 
 				UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();

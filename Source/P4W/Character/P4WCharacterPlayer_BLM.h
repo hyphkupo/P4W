@@ -228,4 +228,76 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
 	UNiagaraComponent* ManafontVFXComponent;
+
+protected:
+	void SpawnBlizzardTrailEffect(AActor* TargetActor);
+	//void SpawnBlizzardImpactEffect(FVector Location, FVector Normal);
+
+protected:
+	// Blizzard
+	UPROPERTY(EditDefaultsOnly)
+	UNiagaraSystem* BlizzardTrailEffect;
+
+	UPROPERTY(EditDefaultsOnly)
+	UNiagaraSystem* BlizzardImpactEffect;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraComponent* BlizzardImpactEffectComponent;
+
+	// Fire
+	UPROPERTY(EditDefaultsOnly)
+	UNiagaraSystem* FireImpactEffect;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraComponent* FireImpactEffectComponent;
+
+	// Thunder
+	UPROPERTY(EditDefaultsOnly)
+	UNiagaraSystem* ThunderImpactEffect;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraComponent* ThunderImpactEffectComponent;
+
+	// FireBall
+	UPROPERTY(EditDefaultsOnly)
+	UNiagaraSystem* FireBallImpactEffect;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
+	UNiagaraComponent* FireBallImpactEffectComponent;
+
+	UPROPERTY()
+	TObjectPtr<class AMagicProjectile> Spell;
+
+protected:
+	// Blizzard
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCBlizzardVFX(UNiagaraSystem* NS, AActor* DamagedActor);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCBlizzardVFX(UNiagaraSystem* NS, AActor* DamagedActor);
+	
+	// Fire
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCFireVFX(UNiagaraSystem* NS, AActor* DamagedActor);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCFireVFX(UNiagaraSystem* NS, AActor* DamagedActor);
+
+	// Thunder
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCThunderVFX(UNiagaraSystem* NS, AActor* DamagedActor);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCThunderVFX(UNiagaraSystem* NS, AActor* DamagedActor);
+
+	// FireBall
+	UFUNCTION(Server, Unreliable)
+	void ServerRPCFireBallVFX(UNiagaraSystem* NS, AActor* DamagedActor);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCFireBallVFX(UNiagaraSystem* NS, AActor* DamagedActor);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Skill")
+	TSubclassOf<class AMagicProjectile> MagicProjectileClass;
+
 };

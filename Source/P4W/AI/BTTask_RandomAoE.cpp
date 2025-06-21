@@ -85,9 +85,9 @@ EBTNodeResult::Type UBTTask_RandomAoE::ExecuteTask(UBehaviorTreeComponent& Owner
     //    World->SpawnActor<AAOEField>(BP_AOE, Point, FRotator::ZeroRotator, SpawnParams);
     //}
     
-    if (SpawnPointArray.Num() >= 10)
+    if (SpawnPointArray.Num() >= 5)
     {
-        for (int i = 0; i < 10; ++i)
+        for (int i = 0; i < 5; ++i)
         {
             FActorSpawnParameters SpawnParams;
             World->SpawnActor<AAOEField>(BP_AOE, SpawnPointArray[SpawnPointArray.Num() - i - 1], FRotator::ZeroRotator, SpawnParams);
