@@ -22,30 +22,6 @@ AP4WGameMode::AP4WGameMode()
 	// set default pawn class to our Blueprinted character
 	uint32 randnum = FMath::RandRange(0, 2);
 
-	//if (randnum == 0)
-	//{
-	//	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PLDPlayer.BP_PLDPlayer_C"));
-	//	if (PlayerPawnBPClass.Class != NULL)
-	//	{
-	//		DefaultPawnClass = PlayerPawnBPClass.Class;
-	//	}
-	//}
-	//else
-	//{
-	//	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_BLMPlayer.BP_BLMPlayer_C"));
-	//	if (PlayerPawnBPClass.Class != NULL)
-	//	{
-	//		DefaultPawnClass = PlayerPawnBPClass.Class;
-	//	}
-	//}
-	//DefaultPawnClass = LastChosenPawnClass;
-
-	//static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprint/BP_PLDPlayer.BP_PLDPlayer_C"));
-	//if (PlayerPawnBPClass.Class != NULL)
-	//{
-	//	DefaultPawnClass = PlayerPawnBPClass.Class;
-	//}
-
 	static ConstructorHelpers::FClassFinder<APlayerController> PlayerControllerBPClass(TEXT("/Game/Blueprint/BP_P4WPlayerController.BP_P4WPlayerController_C"));
 	if (PlayerControllerBPClass.Class != NULL)
 	{

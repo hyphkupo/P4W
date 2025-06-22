@@ -25,6 +25,12 @@ public:
 	void UpdateExpBar(float NewCurrentExp, float NewMaxExp);
 	void UpdateStat(const FP4WCharacterStat& BaseStat, const FP4WCharacterStat& ModifierStat);
 
+	UPROPERTY()
+	TObjectPtr<class UP4WCooltimeWidget> CooltimeBar;
+
+	//UFUNCTION()
+	//void StartCooltime(float Duration);
+
 protected:
 	virtual void NativeConstruct() override;
 
@@ -38,6 +44,9 @@ protected:
 	UPROPERTY()
 	TObjectPtr<class UP4WExpBarWidget> ExpBar;
 
+	
+
 	UPROPERTY()
 	TObjectPtr<class UP4WCharacterStatWidget> CharacterStat;
+
 };

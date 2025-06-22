@@ -26,6 +26,12 @@
 #include "NiagaraComponent.h"
 #include "Skill/MagicProjectile.h"
 
+#include "UI/P4WWidgetComponent.h"
+#include "UI/P4WCooltimeWidget.h"
+#include "UI/P4WHUDWidget.h"
+
+#include "Kismet/GameplayStatics.h"
+
 AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 {
 	// Attack Input
@@ -147,7 +153,7 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 		FireBallImpactEffect = FireBallImpactEffectRef.Object;
 	}
 
-	//MagicProjectileClass.niaga
+	// Widget Component
 
 }
 
@@ -263,6 +269,32 @@ void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 
 	if (bCanAttack && bCanPlayBlizzardAttack)
 	{
+		//for (UUserWidget* Widget : UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, UP4WHUDWidget::StaticClass(), false))
+		//{
+		//	UP4WHUDWidget* HUD = Cast<UP4WHUDWidget>(Widget);
+		//	if (HUD && HUD->CooltimeBar)
+		//	{
+		//		HUD->CooltimeBar->StartCooltime(3.0f);
+		//		break;
+		//	}
+		//}
+
+
+		//APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+		//UP4WHUDWidget* HUD = Cast<UP4WHUDWidget>(PC->GetHUD());
+
+		//if (HUD)
+		//{
+		//	HUD->CooltimeBar->StartCooltime(3.0f);
+		//}
+
+
+		CooltimeBar->StartCooltime(3.0f);
+		//UP4WCooltimeWidget* CooltimeWidget = Cast<UP4WCooltimeWidget>(CooltimeBar);
+		//if (CooltimeWidget)
+		//{
+		//	CooltimeWidget->StartCooltime(3.0f);
+		//}
 		ProcessComboCommand();
 
 		bIsUsingSkill = true;
@@ -286,6 +318,11 @@ void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 			Start,
 			Dir.Rotation()
 		);
+
+		//if (CooltimeWidget)
+		//{
+		//	CooltimeWidget->StartCooltime(CooldownTime);
+		//}
 
 		//Spell->LaunchProjectile(Dir, HitTarget);
 
@@ -714,6 +751,8 @@ void AP4WCharacterPlayer_BLM::Manafont(const FInputActionValue& Value)
 			ManafontVFXComponent->Activate();
 		}
 
+		CooltimeBar->StartCooltime(3.0f);
+
 		FTimerHandle ManafontVFXHandle;
 		GetWorld()->GetTimerManager().SetTimer(
 			ManafontVFXHandle,
@@ -800,6 +839,7 @@ void AP4WCharacterPlayer_BLM::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
 		InHUDWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());
 		InHUDWidget->UpdateHpBar(Stat->GetCurrentHp(), Stat->GetMaxHp());
 		InHUDWidget->UpdateMpBar(Stat->GetCurrentMp(), Stat->GetMaxMp());
+		InHUDWidget->CooltimeBar->UpdateCooltimeBar();
 
 		Stat->OnStatChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateStat);
 		Stat->OnHpChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateHpBar);
@@ -1292,24 +1332,10 @@ void AP4WCharacterPlayer_BLM::SpellHitCheckDoT()
 				CurrentAttackDamage = CurrentDamage;
 				HitTarget->TakeDamage(CurrentAttackDamage, DamageEvent, GetController(), this);
 
-				//FTimerHandle DoTHandle;
 				uint32 Duration = DotTime;
-				//FTimerHandle DelayHandle;
 
 				// 타겟 해제 방지용
 				DotHitTarget = HitTarget;
-
-				//FTimerHandle DotManagerHandle;
-
-				//GetWorld()->GetTimerManager().SetTimer(
-				//	DotManagerHandle,
-				//	FTimerDelegate::CreateLambda([&]()  // [=] 값 캡처
-				//		{
-				//			//ServerRPCApplyTargetDamage(DotHitTarget, Potency, DamageEvent, GetController(), this);
-				//			RepeatingDamage();
-				//		}
-				//	), 1.0f, true, 1.0f
-				//);
 
 				FTimerHandle DummyHandle;
 				DotHandle.Add(DummyHandle);
@@ -1329,33 +1355,6 @@ void AP4WCharacterPlayer_BLM::SpellHitCheckDoT()
 						}
 					), 5.5f, false
 				);
-
-				//GetWorld()->GetTimerManager().SetTimer(
-				//	DurationHandle,
-				//	FTimerDelegate::CreateLambda([&]()  // [=] 값 캡처
-				//		{
-				//			GetWorld()->GetTimerManager().ClearTimer(DotHandle[Num]);
-				//		}
-				//	), 5.0f, false
-				//);
-
-				//GetWorld()->GetTimerManager().SetTimer(
-				//	DoTHandle,
-				//	FTimerDelegate::CreateLambda([&]()
-				//		{
-				//			GetWorldTimerManager().ClearTimer(DoTHandle);
-				//		}
-				//	), 5.0f, false
-				//);
-
-				//GetWorld()->GetTimerManager().SetTimer(
-				//	DelayHandle,
-				//	FTimerDelegate::CreateLambda([&]()
-				//		{
-				//			
-				//		}
-				//	), 1.0f, false
-				//);
 			}
 
 			FColor DebugColor = HitDetected ? FColor::Green : FColor::Red;

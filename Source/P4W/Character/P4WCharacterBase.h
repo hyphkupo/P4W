@@ -253,4 +253,11 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "VFX")
 	UNiagaraComponent* TargetingVFXComponent;
 
+public:
+	UPROPERTY()
+	class UP4WCooltimeWidget* CooltimeBar;
+
+	UPROPERTY()
+	TObjectPtr<class UP4WHUDWidget> HUDWidget;
+
 };

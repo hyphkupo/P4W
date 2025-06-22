@@ -27,6 +27,7 @@
 #include "UI/P4WUserWidget.h"
 #include "UI/P4WHpBarWidget.h"
 #include "UI/P4WMpBarWidget.h"
+#include "UI/P4WCooltimeWidget.h"
 #include "UI/P4WWidgetComponent.h"
 
 #include "Physics/P4WCollision.h"
@@ -219,6 +220,9 @@ AP4WCharacterBase::AP4WCharacterBase()
 	}
 	HpBar->bHiddenInGame = true;
 
+	//CooltimeBar = CreateDefaultSubobject<UP4WWidgetComponent>(TEXT("Widget"));
+
+
 	// Skill Component
 	Skill = CreateDefaultSubobject<USkillSystemComponent>(TEXT("Skill"));
 
@@ -306,6 +310,13 @@ void AP4WCharacterBase::SetupCharacterWidget(UP4WUserWidget* InUserWidget)
 	{
 		MpBarWidget->UpdateMpBar(Stat->GetCurrentMp(), Stat->GetMaxMp());
 		Stat->OnMpChanged.AddUObject(MpBarWidget, &UP4WMpBarWidget::UpdateMpBar);
+	}
+
+	UP4WCooltimeWidget* CooltimeBarWidget = Cast<UP4WCooltimeWidget>(InUserWidget);
+	if (CooltimeBarWidget)
+	{
+		//CooltimeBarWidget->UpdateCooltimeBar();
+		//Stat->OnMpChanged.AddUObject(MpBarWidget, &UP4WMpBarWidget::UpdateMpBar);
 	}
 }
 
@@ -649,101 +660,6 @@ float AP4WCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 	
 	return DamageAmount;
 }
-
-//	/** Object Query functions **/
-//	bool UKismetSystemLibrary::LineTraceSingleForObjects(const UObject * WorldContextObject, const FVector Start, const FVector End, const TArray<TEnumAsByte<EObjectTypeQuery> > &ObjectTypes, bool bTraceComplex, const TArray<AActor*>&ActorsToIgnore, EDrawDebugTrace::Type DrawDebugType, FHitResult & OutHit, bool bIgnoreSelf, FLinearColor TraceColor, FLinearColor TraceHitColor, float DrawTime)
-//	{
-//		static const FName LineTraceSingleName(TEXT("LineTraceSingleForObjects"));
-//		FCollisionQueryParams Params = ConfigureCollisionParams(LineTraceSingleName, bTraceComplex, ActorsToIgnore, bIgnoreSelf, WorldContextObject);
-//
-//		FCollisionObjectQueryParams ObjectParams = ConfigureCollisionObjectParams(ObjectTypes);
-//		if (ObjectParams.IsValid() == false)
-//		{
-//			UE_LOG(LogBlueprintUserMessages, Warning, TEXT("Invalid object types"));
-//			return false;
-//		}
-//
-//		UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-//		bool const bHit = World ? World->LineTraceSingleByObjectType(OutHit, Start, End, ObjectParams, Params) : false;
-//
-//#if ENABLE_DRAW_DEBUG
-//		DrawDebugLineTraceSingle(World, Start, End, DrawDebugType, bHit, OutHit, TraceColor, TraceHitColor, DrawTime);
-//#endif
-//
-//		return bHit;
-//	}
-
-//void AP4WCharacterBase::FindTarget()
-//{
-//	FVector Start = GetActorLocation();
-//	FVector End = Start + GetActorForwardVector() * 400.0f;
-//
-//	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-//	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn)); // 예: 캐릭터만 감지
-//
-//	TArray<AActor*> ActorsToIgnore;
-//	ActorsToIgnore.Add(this);
-//
-//	FHitResult HitResult;
-//
-//	for (int i = 0; i < 120; ++i)
-//	{
-//		bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
-//			GetWorld(),
-//			Start,
-//			End,
-//			30.0f,
-//			ObjectTypes,
-//			false,                  // bTraceComplex
-//			ActorsToIgnore,
-//			EDrawDebugTrace::ForDuration, // 디버그 라인 표시
-//			HitResult,
-//			true                   // bIgnoreSelf
-//		);
-//
-//		if (bHit)
-//		{
-//			UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.GetActor()->GetName());
-//			HitActors.Add(HitResult.GetActor());
-//		}
-//	}
-//
-//	HitTarget = HitResult.GetActor();
-//
-//	/*
-//	FVector CameraForwardVector = GetActorForwardVector();
-//	FVector LeftEndVector = CameraForwardVector.RotateAngleAxis(-60.0f, FVector::UpVector);
-//	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypeToLock;
-//	ObjectTypeToLock.Add(EObjectTypeQuery::ObjectTypeQuery3);
-//	FCollisionQueryParams QueryParams(NAME_None);
-//	TArray<AActor*> ActorsToNotTargeting;
-//	ActorsToNotTargeting.Add(this);
-//	FVector StartPoint = GetActorLocation();
-//	FHitResult HitResult;
-//	float ClosestDist = 50.0f;
-//	AActor* ClosestHitActor = nullptr;
-//	for (int i = 0; i < 120; i += 5)
-//	{
-//		FVector Direction = LeftEndVector.RotateAngleAxis(i, FVector::UpVector);
-//		FVector EndPoint = StartPoint + Direction * TargetingRange;
-//		bool bIsHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
-//			GetWorld(), StartPoint, EndPoint, 200.f,
-//			ObjectTypeToLock, false, ActorsToNotTargeting, EDrawDebugTrace::ForDuration,
-//			HitResult, true,
-//			FLinearColor::Red, FLinearColor::Green, 2.f);
-//		if (bIsHit && HitResult.Distance < ClosestDist)
-//		{
-//			ClosestDist = HitResult.Distance;
-//			ClosestHitActor = HitResult.GetActor();
-//		}
-//	}
-//	if (ClosestHitActor)
-//	{
-//		bHasLockTarget = true;
-//		LockedOnTarget = ClosestHitActor;
-//	}
-//	*/
-//}
 
 void AP4WCharacterBase::FindTarget()
 {
