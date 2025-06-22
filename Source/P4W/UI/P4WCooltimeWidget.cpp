@@ -31,24 +31,23 @@ void UP4WCooltimeWidget::NativeConstruct()
 
 void UP4WCooltimeWidget::StartCooltime(float InCooltime)
 {
-	//if (!PbCooltimeBar)
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("CooltimeBar is null! Make sure UMG binding is correct."));
-	//	return;
-	//}
+	if (!PbCooltimeBar)
+	{
+		return;
+	}
 
-	//MaxCooltime = InCooltime;
-	//CurrentCooltime = InCooltime;
+	MaxCooltime = InCooltime;
+	CurrentCooltime = InCooltime;
 
-	//UpdateCooltimeBar();
+	UpdateCooltimeBar();
 
-	//GetWorld()->GetTimerManager().SetTimer(
-	//	CooltimeTimerHandle,
-	//	this,
-	//	&UP4WCooltimeWidget::TickCooltime,
-	//	0.05f,
-	//	true
-	//);
+	GetWorld()->GetTimerManager().SetTimer(
+		CooltimeTimerHandle,
+		this,
+		&UP4WCooltimeWidget::TickCooltime,
+		0.05f,
+		true
+	);
 }
 
 void UP4WCooltimeWidget::TickCooltime()
@@ -65,8 +64,16 @@ void UP4WCooltimeWidget::TickCooltime()
 
 void UP4WCooltimeWidget::UpdateCooltimeBar()
 {
-	if (PbCooltimeBar && MaxCooltime > 0.0f)
+	if (PbCooltimeBar)
 	{
 		PbCooltimeBar->SetPercent(CurrentCooltime / MaxCooltime);
+		GetWorld()->GetTimerManager().SetTimer(
+			CooltimeTimerHandle,
+			FTimerDelegate::CreateLambda([&]()
+				{
+					PbCooltimeBar->SetPercent(0.3f);
+				}
+			), 0.5f, false
+		);
 	}
 }

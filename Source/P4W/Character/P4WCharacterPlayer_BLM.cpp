@@ -29,8 +29,10 @@
 #include "UI/P4WWidgetComponent.h"
 #include "UI/P4WCooltimeWidget.h"
 #include "UI/P4WHUDWidget.h"
+#include "Blueprint/UserWidget.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Player/P4WPlayerController.h"
 
 AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 {
@@ -155,6 +157,13 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 
 	// Widget Component
 
+}
+
+void AP4WCharacterPlayer_BLM::BeginPlay()
+{
+	Super::BeginPlay();
+
+	
 }
 
 void AP4WCharacterPlayer_BLM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -751,7 +760,24 @@ void AP4WCharacterPlayer_BLM::Manafont(const FInputActionValue& Value)
 			ManafontVFXComponent->Activate();
 		}
 
-		CooltimeBar->StartCooltime(3.0f);
+		//if (CooltimeBar)
+		//{
+		//	CooltimeBar->UpdateCooltimeBar();
+		//}
+
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (!PC) return;
+
+		AP4WPlayerController* MyPC = Cast<AP4WPlayerController>(PC);
+		if (!MyPC || !MyPC->HUDWidget) return;
+
+		UP4WCooltimeWidget* CooltimeWidget = MyPC->HUDWidget->CooltimeBar;
+
+		if (CooltimeWidget)
+		{
+			CooltimeWidget->StartCooltime(3.0f);
+		}
+
 
 		FTimerHandle ManafontVFXHandle;
 		GetWorld()->GetTimerManager().SetTimer(

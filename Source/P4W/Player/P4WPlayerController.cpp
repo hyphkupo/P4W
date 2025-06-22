@@ -34,6 +34,16 @@ void AP4WPlayerController::BeginPlay()
 	FInputModeGameOnly GameOnlyInputMode;
 	SetInputMode(GameOnlyInputMode);
 
+	if (HUDWidgetClass)
+	{
+		HUDWidget = CreateWidget<UP4WHUDWidget>(this, HUDWidgetClass);
+		if (HUDWidget)
+		{
+			HUDWidget->AddToViewport();
+		}
+	}
+
+
 	//P4WHUDWidget = CreateWidget<UP4WHUDWidget>(this, P4WHUDWidgetClass);
 	//if (P4WHUDWidget)
 	//{

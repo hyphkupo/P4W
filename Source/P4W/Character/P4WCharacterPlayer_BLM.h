@@ -18,6 +18,8 @@ class P4W_API AP4WCharacterPlayer_BLM : public AP4WCharacterBase, public IP4WCha
 public:
 	AP4WCharacterPlayer_BLM();
 
+	virtual void BeginPlay() override;
+
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -299,5 +301,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Skill")
 	TSubclassOf<class AMagicProjectile> MagicProjectileClass;
+
+	
 
 };
