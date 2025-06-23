@@ -666,8 +666,8 @@ void AP4WCharacterBase::FindTarget()
 	FVector MyLocation = GetActorLocation();
 	FVector MyForward = GetActorForwardVector();
 
-	float ViewAngleDegrees = 120.0f; // 전체 시야각 (예: 60도면 좌우 30도씩)
-	float ViewRadius = 1000.0f;
+	float ViewAngleDegrees = 120.0f; // 전체 시야각
+	float ViewRadius = 2000.0f;
 
 	// 1. 구체 범위 내 액터 찾기
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
@@ -683,7 +683,7 @@ void AP4WCharacterBase::FindTarget()
 		MyLocation,
 		ViewRadius,
 		ObjectTypes,
-		nullptr,             // 특정 클래스만 찾고 싶으면 여기에 넣음
+		nullptr,
 		IgnoredActors,
 		OutActors
 	);
@@ -708,7 +708,7 @@ void AP4WCharacterBase::FindTarget()
 		}
 	}
 
-	float BaseActorDist = 500.0f;
+	float BaseActorDist = 2000.0f;
 	for (AActor* Actor : HitActors)
 	{
 		float ActorDist = FVector::Distance(MyLocation, Actor->GetActorLocation());
