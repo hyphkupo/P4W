@@ -95,67 +95,6 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     PrevSpeed = MoveComp->MaxWalkSpeed;
     MoveComp->MaxWalkSpeed = ChargeSpeed;
 
-    /*
-    FTimerHandle SpeedHandle;
-    ////GetWorld()->GetTimerManager().SetTimer(
-    ////    SpeedHandle,
-    ////    FTimerDelegate::CreateLambda([&]()
-    ////        {
-    ////            UCharacterMovementComponent* MoveComp = AIChar->GetCharacterMovement();
-    ////            if (MoveComp)
-    ////            {
-    ////                MoveComp->MaxWalkSpeed = PrevSpeed;
-    ////            }
-    ////        }
-    ////    ), 0.01f, false
-    ////);
-    //GetWorld()->GetTimerManager().SetTimer(SpeedHandle, [&]()
-    //    {
-    //        MoveComp->MaxWalkSpeed = PrevSpeed;
-    //        UGameplayStatics::ApplyDamage(ChosenActor, Damage, nullptr, AIPawn, nullptr);
-    //    }, 0.01f, false
-    //);
-
-    FTimerDelegate TimerDel;
-    //TimerDel = FTimerDelegate::CreateUObject(this, &UBTTask_Charge::ChargeComplete, AIChar, MoveComp, PrevSpeed, ChosenActor);
-    */
-
-
-    
-    // overlap되면 대미지 적용?
-    //float Dist = FVector::Dist(AIPawn->GetActorLocation(), ChosenActor->GetActorLocation());
-    ////ChargeTime = ChargeTime * (Dist / 1000.0f);
-    //if (Dist <= 500.0f)
-    //{
-    //    MoveComp->MaxWalkSpeed = PrevSpeed;
-    //    UGameplayStatics::ApplyDamage(ChosenActor, Damage, nullptr, AIChar, nullptr);
-    //}
-    //GetWorld()->GetTimerManager().SetTimer(SpeedHandle, TimerDel, ChargeTime, false);
-
-    //float DetectRadius = 50.0f;
-
-    
-
-
-    //TArray<FOverlapResult> OverlapResults;
-    //FCollisionQueryParams CollisionQueryParam;
-    //bool bResult = World->OverlapMultiByChannel(
-    //    OverlapResults,
-    //    ChosenActor->GetActorLocation(),
-    //    FQuat::Identity,
-    //    CCHANNEL_P4WACTION,
-    //    FCollisionShape::MakeSphere(DetectRadius),
-    //    CollisionQueryParam
-    //);
-
-    //if (bResult)
-    //{
-    //    MoveComp->MaxWalkSpeed = PrevSpeed;
-    //    UGameplayStatics::ApplyDamage(ChosenActor, Damage, nullptr, AIChar, nullptr);
-    //}
-
-    //UE_LOG(LogTemp, Log, TEXT("MaxEnmity: %f"), UP4WGameSingleton::Get().MaxEnmity);
-
     bool bIsTarget = false;
     
     return EBTNodeResult::InProgress;

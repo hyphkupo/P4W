@@ -298,7 +298,7 @@ void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 		//}
 
 
-		CooltimeBar->StartCooltime(3.0f);
+		//CooltimeBar->StartCooltime(3.0f);
 		//UP4WCooltimeWidget* CooltimeWidget = Cast<UP4WCooltimeWidget>(CooltimeBar);
 		//if (CooltimeWidget)
 		//{
@@ -865,7 +865,7 @@ void AP4WCharacterPlayer_BLM::SetupHUDWidget(UP4WHUDWidget* InHUDWidget)
 		InHUDWidget->UpdateStat(Stat->GetBaseStat(), Stat->GetModifierStat());
 		InHUDWidget->UpdateHpBar(Stat->GetCurrentHp(), Stat->GetMaxHp());
 		InHUDWidget->UpdateMpBar(Stat->GetCurrentMp(), Stat->GetMaxMp());
-		InHUDWidget->CooltimeBar->UpdateCooltimeBar();
+		//InHUDWidget->CooltimeBar->UpdateCooltimeBar();
 
 		Stat->OnStatChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateStat);
 		Stat->OnHpChanged.AddUObject(InHUDWidget, &UP4WHUDWidget::UpdateHpBar);

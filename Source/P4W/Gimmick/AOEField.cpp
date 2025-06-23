@@ -33,7 +33,7 @@ void AAOEField::BeginPlay()
 {
 	Super::BeginPlay();
 	
-    DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 24, FColor::Red, false, Duration);
+    //DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 24, FColor::Red, false, Duration);
 
     FTimerHandle DamageTimerHandle;
     GetWorldTimerManager().SetTimer(
