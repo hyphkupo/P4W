@@ -11,6 +11,7 @@
 #include "NavigationSystem.h"
 #include "Net/UnrealNetwork.h"
 #include "Character/P4WCharacterBase.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UBTTask_Howling::UBTTask_Howling()
 {
@@ -40,6 +41,13 @@ EBTNodeResult::Type UBTTask_Howling::ExecuteTask(UBehaviorTreeComponent& OwnerCo
     {
         return EBTNodeResult::Failed;
     }
+    //AP4WBoss* P4WBossChar = Cast<AP4WBoss>(BossPawn);
+    //if (P4WBossChar)
+    //{
+    //    P4WBossChar->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+    //}
+ //       GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+    // 
 
     UWorld* World = BossPawn->GetWorld();
     if (!World)
@@ -102,6 +110,29 @@ EBTNodeResult::Type UBTTask_Howling::ExecuteTask(UBehaviorTreeComponent& OwnerCo
             );
         }
     }
+
+    UBlackboardComponent* BC = OwnerComp.GetBlackboardComponent();
+
+    float DashDuration = 2.0f;
+    //UBlackboardComponent* BC = OwnerComp.GetBlackboardComponent();
+
+    //FTimerHandle TimerHandle;
+    //World->GetTimerManager().SetTimer(
+    //    TimerHandle,
+    //    FTimerDelegate::CreateLambda([&]()
+    //        {
+    //            P4WBossChar->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+    //        }
+    //    ), 0.02f, false
+    //);
+
+    //BossChar->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+
+    BossPawn->GetWorldTimerManager().SetTimerForNextTick([=]() {
+        BC->SetValueAsBool("IsPatternPlaying", false);
+        BC->SetValueAsFloat("NextPatternTime", BossPawn->GetWorld()->GetTimeSeconds() + FMath::FRandRange(5.0f, 10.0f));
+        });
 
     return EBTNodeResult::Succeeded;
 }

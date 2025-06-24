@@ -69,22 +69,24 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
         return EBTNodeResult::Failed;
     }
 
-    int32 Index;
-    Index = FMath::RandRange(0, Actors.Num() - 1);
-    while (true)
+    TArray<AActor*> AliveActors;
+
+    for (AActor* Actor : Actors)
     {
-        AP4WCharacterBase* RanChar = Cast<AP4WCharacterBase>(Actors[Index]);
-        if (RanChar->bIsDead)
+        AP4WCharacterBase* Candidate = Cast<AP4WCharacterBase>(Actor);
+        if (Candidate && !Candidate->bIsDead)
         {
-            continue;
-        }
-        else
-        {
-            break;
+            AliveActors.Add(Candidate);
         }
     }
-    
-    ChosenActor = Actors[Index];
+
+    if (AliveActors.Num() == 0)
+    {
+        return EBTNodeResult::Failed;
+    }
+
+    int32 Index = FMath::RandRange(0, AliveActors.Num() - 1);
+    ChosenActor = AliveActors[Index];
 
     DrawDebugSphere(World, ChosenActor->GetActorLocation(), 80.0f, 16, FColor::Red, false, 2.0f);
 
@@ -96,6 +98,9 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     MoveComp->MaxWalkSpeed = ChargeSpeed;
 
     bool bIsTarget = false;
+
+    
+    
     
     return EBTNodeResult::InProgress;
     //return EBTNodeResult::Failed;
@@ -120,6 +125,10 @@ void UBTTask_Charge::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
         {
             UGameplayStatics::ApplyDamage(ChosenActor, Damage, AICon, AIChar, nullptr);
         }
+
+        UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
+        BB->SetValueAsBool("IsPatternPlaying", false);
+        BB->SetValueAsFloat("NextPatternTime", GetWorld()->GetTimeSeconds() + FMath::FRandRange(5.0f, 10.0f));
 
         FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
         //return EBTNodeResult::Succeeded;

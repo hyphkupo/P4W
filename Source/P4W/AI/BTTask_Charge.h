@@ -49,5 +49,4 @@ protected:
     ACharacter* AIChar;
     UCharacterMovementComponent* MoveComp;
 
-
 };

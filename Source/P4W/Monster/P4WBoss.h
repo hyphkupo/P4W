@@ -43,9 +43,16 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAnimMontage> AutoAttackBossMontage;
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPCAutoAttackBossAnimation();
+
+	UFUNCTION()
+	void PlayAutoAttackBossAnimation();
+
 public:
 	//void SetBossMaxEnmity(float Enmity);
 
 	//UPROPERTY()
 	//float MaxEnmity;
+
 };

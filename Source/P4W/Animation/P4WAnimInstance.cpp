@@ -44,5 +44,7 @@ void UP4WAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bIsFalling = Movement->IsFalling();
 		bIsJumping = bIsFalling & (Velocity.Z > JumpingThreshold) & (Velocity.X > KINDA_SMALL_NUMBER) & (Velocity.Y > KINDA_SMALL_NUMBER);
 		bIsJumpingPlace = bIsFalling & (Velocity.Z > JumpingThreshold) & (Velocity.X == 0.0f) & (Velocity.Y == 0.0f);
+
+		//UE_LOG(LogTemp, Log, TEXT("Speed: %f"), GroundSpeed);
 	}
 }

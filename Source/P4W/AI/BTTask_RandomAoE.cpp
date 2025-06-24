@@ -7,6 +7,8 @@
 #include "AIController.h"
 #include "Gimmick/AOEField.h"
 #include "NavigationSystem.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "Math/UnrealMathUtility.h"
 
 UBTTask_RandomAoE::UBTTask_RandomAoE()
 {
@@ -22,6 +24,8 @@ UBTTask_RandomAoE::UBTTask_RandomAoE()
 EBTNodeResult::Type UBTTask_RandomAoE::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
     EBTNodeResult::Type Result = Super::ExecuteTask(OwnerComp, NodeMemory);
+
+    UBlackboardComponent* BC = OwnerComp.GetBlackboardComponent();
 
     AAIController* AICon = OwnerComp.GetAIOwner();
 
@@ -85,9 +89,9 @@ EBTNodeResult::Type UBTTask_RandomAoE::ExecuteTask(UBehaviorTreeComponent& Owner
     //    World->SpawnActor<AAOEField>(BP_AOE, Point, FRotator::ZeroRotator, SpawnParams);
     //}
     
-    if (SpawnPointArray.Num() >= 5)
+    if (SpawnPointArray.Num() >= 10)
     {
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < 10; ++i)
         {
             FActorSpawnParameters SpawnParams;
             World->SpawnActor<AAOEField>(BP_AOE, SpawnPointArray[SpawnPointArray.Num() - i - 1], FRotator::ZeroRotator, SpawnParams);
@@ -95,5 +99,13 @@ EBTNodeResult::Type UBTTask_RandomAoE::ExecuteTask(UBehaviorTreeComponent& Owner
         SpawnPointArray.Empty();
     }
 
-    return EBTNodeResult::Succeeded;
+    float DashDuration = 2.0f;
+    //UBlackboardComponent* BC = OwnerComp.GetBlackboardComponent();
+
+    BossPawn->GetWorldTimerManager().SetTimerForNextTick([=]() {
+        BC->SetValueAsBool("IsPatternPlaying", false);
+        BC->SetValueAsFloat("NextPatternTime", BossPawn->GetWorld()->GetTimeSeconds() + FMath::FRandRange(5.0f, 10.0f));
+        });
+
+    return EBTNodeResult::InProgress;
 }

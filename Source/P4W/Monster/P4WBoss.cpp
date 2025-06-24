@@ -9,6 +9,8 @@
 #include "Animation/AnimMontage.h"
 #include "Components/CapsuleComponent.h"
 #include "UI/P4WWidgetComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AP4WBoss::AP4WBoss()
 {
@@ -45,7 +47,15 @@ AP4WBoss::AP4WBoss()
 
 	//HpBar->bHiddenInGame = false;
 
-	
+	//GetCharacterMovement()->bOrientRotationToMovement = true;
+	//GetCharacterMovement()->RotationRate = FRotator(0, 540, 0);
+	//bUseControllerRotationYaw = false;
+
+	//GetMesh()->SetComponentTickEnabled(true);
+
+	SetReplicates(true);
+	GetMesh()->SetIsReplicated(true);
+	bOnlyRelevantToOwner = false;
 }
 
 void AP4WBoss::BeginPlay()
@@ -93,8 +103,20 @@ void AP4WBoss::NotifyComboActionEnd()
 void AP4WBoss::AutoAttack()
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	MulticastRPCAutoAttackBossAnimation();
+}
+
+void AP4WBoss::PlayAutoAttackBossAnimation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	AnimInstance->Montage_Play(AutoAttackBossMontage);
 }
+
+void AP4WBoss::MulticastRPCAutoAttackBossAnimation_Implementation()
+{
+	PlayAutoAttackBossAnimation();
+}
+
 
 //void AP4WBoss::SetBossMaxEnmity(float Enmity)
 //{

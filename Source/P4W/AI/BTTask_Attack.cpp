@@ -5,9 +5,18 @@
 #include "AIController.h"
 #include "Interface/P4WCharacterAIInterface.h"
 #include "Monster/P4WBoss.h"
+#include "Kismet/GameplayStatics.h"
+#include "Character/P4WCharacterPlayer_PLD.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "TimerManager.h"
 
 UBTTask_Attack::UBTTask_Attack()
 {
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> AutoAttackBossMontageRef(TEXT("/Game/Animation/AM_AutoAttackBoss.AM_AutoAttackBoss"));
+	if (AutoAttackBossMontageRef.Object)
+	{
+		AutoAttackBossMontage = AutoAttackBossMontageRef.Object;
+	}
 }
 
 EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -26,22 +35,62 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 		return EBTNodeResult::Failed;
 	}
 
-	FAICharacterAttackFinished OnAttackFinished;
-	OnAttackFinished.BindLambda(
-		[&]()
-		{
-			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-		}
-	);
+	AAIController* AICon = OwnerComp.GetAIOwner();
 
-	AIPawn->SetAIAttackDelegate(OnAttackFinished);
-	AIPawn->AttackByAI();
+
+	//FAICharacterAttackFinished OnAttackFinished;
+	//OnAttackFinished.BindLambda(
+	//	[&]()
+	//	{
+	//		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+	//	}
+	//);
+
+	//AIPawn->SetAIAttackDelegate(OnAttackFinished);
+	//AIPawn->AttackByAI();
 
 	AP4WBoss* BossPawn = Cast<AP4WBoss>(ControllingPawn);
 	if (BossPawn)
 	{
-		BossPawn->AutoAttack();
+		UBlackboardComponent* BlackboardPtr = OwnerComp.GetBlackboardComponent();
+		if (!BlackboardPtr)
+		{
+			return EBTNodeResult::Failed;
+		}
+
+		UObject* Target = BlackboardPtr->GetValueAsObject("Target");
+		AActor* TargetPawn = Cast<AActor>(Target);
+
+		//AP4WCharacterPlayer_PLD* PLDPawn = Cast<AP4WCharacterPlayer_PLD>(TargetPawn);
+		//if (PLDPawn && PLDPawn->bIsSheltron)
+		//{
+		//	UGameplayStatics::ApplyDamage(TargetPawn, 5.0f * 0.85, AICon, ControllingPawn, nullptr);
+		//}
+		//else
+		//{
+		//	UGameplayStatics::ApplyDamage(TargetPawn, 5.0f, AICon, ControllingPawn, nullptr);
+		//}
+
+		//FTimerHandle AttackHandle;
+
+		UAnimInstance* AnimInstance = BossPawn->GetMesh()->GetAnimInstance();
+			//MulticastRPCAutoAttackBossAnimation();
+
+		//AnimInstance->Montage_Play(AutoAttackBossMontage);
+		//BossPawn->AutoAttack();
+
+		//GetWorld()->GetTimerManager().SetTimer(
+		//	AttackHandle,
+		//	FTimerDelegate::CreateLambda([&]()
+		//		{
+		//			BossPawn->AutoAttack();
+		//		}
+		//	), 0.5f, false
+		//);
+
+
+		return EBTNodeResult::Succeeded;
 	}
 
-	return EBTNodeResult::InProgress;
+	return EBTNodeResult::Succeeded;
 }
