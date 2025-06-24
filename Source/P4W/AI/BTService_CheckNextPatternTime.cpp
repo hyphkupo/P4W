@@ -16,17 +16,23 @@ UBTService_CheckNextPatternTime::UBTService_CheckNextPatternTime()
 void UBTService_CheckNextPatternTime::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
     UBlackboardComponent* BlackboardPtr = OwnerComp.GetBlackboardComponent();
-    if (!BlackboardPtr) return;
+    if (!BlackboardPtr)
+    {
+        return;
+    }
 
-    bool bIsPlaying = BlackboardPtr->GetValueAsBool("IsPatternPlaying");
+    bool bIsPatternPlaying = BlackboardPtr->GetValueAsBool("IsPatternPlaying");
     float NextPatternTime = BlackboardPtr->GetValueAsFloat("NextPatternTime");
 
     UWorld* World = OwnerComp.GetWorld();
-    if (!World) return;
+    if (!World)
+    {
+        return;
+    }
 
     float CurrentTime = World->GetTimeSeconds();
 
-    if (!bIsPlaying && CurrentTime >= NextPatternTime)
+    if (!bIsPatternPlaying && CurrentTime >= NextPatternTime)
     {
         BlackboardPtr->SetValueAsBool("IsPatternPlaying", true);
 

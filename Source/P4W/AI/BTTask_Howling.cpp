@@ -132,7 +132,8 @@ EBTNodeResult::Type UBTTask_Howling::ExecuteTask(UBehaviorTreeComponent& OwnerCo
     BossPawn->GetWorldTimerManager().SetTimerForNextTick([=]() {
         BC->SetValueAsBool("IsPatternPlaying", false);
         BC->SetValueAsFloat("NextPatternTime", BossPawn->GetWorld()->GetTimeSeconds() + FMath::FRandRange(5.0f, 10.0f));
-        });
+        }
+    );
 
     return EBTNodeResult::Succeeded;
 }

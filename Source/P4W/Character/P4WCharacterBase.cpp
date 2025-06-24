@@ -691,7 +691,10 @@ void AP4WCharacterBase::FindTarget()
 	// 2. Dot Product로 시야각 필터링
 	for (AActor* Actor : OutActors)
 	{
-		if (!Actor) continue;
+		if (!Actor)
+		{
+			continue;
+		}
 
 		FVector ToTarget = Actor->GetActorLocation() - MyLocation;
 		ToTarget.Normalize();
