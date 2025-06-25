@@ -162,8 +162,6 @@ AP4WCharacterPlayer_BLM::AP4WCharacterPlayer_BLM()
 void AP4WCharacterPlayer_BLM::BeginPlay()
 {
 	Super::BeginPlay();
-
-	
 }
 
 void AP4WCharacterPlayer_BLM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -765,18 +763,18 @@ void AP4WCharacterPlayer_BLM::Manafont(const FInputActionValue& Value)
 		//	CooltimeBar->UpdateCooltimeBar();
 		//}
 
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		if (!PC) return;
+		//APlayerController* PC = Cast<APlayerController>(GetController());
+		//if (!PC) return;
 
-		AP4WPlayerController* MyPC = Cast<AP4WPlayerController>(PC);
-		if (!MyPC || !MyPC->HUDWidget) return;
+		//AP4WPlayerController* MyPC = Cast<AP4WPlayerController>(PC);
+		//if (!MyPC || !MyPC->HUDWidget) return;
 
-		UP4WCooltimeWidget* CooltimeWidget = MyPC->HUDWidget->CooltimeBar;
+		//UP4WCooltimeWidget* CooltimeWidget = MyPC->HUDWidget->CooltimeBar;
 
-		if (CooltimeWidget)
-		{
-			CooltimeWidget->StartCooltime(3.0f);
-		}
+		//if (CooltimeWidget)
+		//{
+		//	CooltimeWidget->StartCooltime(3.0f);
+		//}
 
 
 		FTimerHandle ManafontVFXHandle;
@@ -1287,7 +1285,9 @@ void AP4WCharacterPlayer_BLM::SpellHitCheckDoT()
 				
 
 				FTimerHandle DummyHandle;
-				DotHandle.Add(DummyHandle);
+				//DotHandle.Add(DummyHandle);
+
+				TimerHandleMap.Add(HitTarget, DummyHandle);
 
 				uint32 Num = TimerNum;
 				FTimerDelegate TimerDel;
@@ -1378,6 +1378,7 @@ void AP4WCharacterPlayer_BLM::SpellHitCheckDoT()
 					FTimerDelegate::CreateLambda([&]()
 						{
 							GetWorld()->GetTimerManager().ClearTimer(DotManagerHandle);
+							DotHitTarget = nullptr;
 						}
 					), 5.5f, false
 				);

@@ -47,7 +47,7 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 
     FVector MyLocation = AIPawn->GetActorLocation();
 
-    DrawDebugSphere(World, MyLocation, SearchRadius, 24, FColor::Green, false, 2.0f);
+    //DrawDebugSphere(World, MyLocation, SearchRadius, 24, FColor::Green, false, 2.0f);
 
     TArray<AActor*> FoundActors;
 
@@ -60,7 +60,7 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
         {
             Actors.Add(Actor);
 
-            DrawDebugSphere(World, Actor->GetActorLocation(), 50.0f, 12, FColor::Yellow, false, 2.0f);
+            //DrawDebugSphere(World, Actor->GetActorLocation(), 50.0f, 12, FColor::Yellow, false, 2.0f);
         }
     }
 
@@ -88,7 +88,7 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     int32 Index = FMath::RandRange(0, AliveActors.Num() - 1);
     ChosenActor = AliveActors[Index];
 
-    DrawDebugSphere(World, ChosenActor->GetActorLocation(), 80.0f, 16, FColor::Red, false, 2.0f);
+    //DrawDebugSphere(World, ChosenActor->GetActorLocation(), 80.0f, 16, FColor::Red, false, 2.0f);
 
     OwnerComp.GetBlackboardComponent()->SetValueAsObject(TargetActorKey.SelectedKeyName, ChosenActor);
     

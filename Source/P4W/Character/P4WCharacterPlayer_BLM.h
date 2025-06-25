@@ -216,7 +216,11 @@ protected:
 
 	FTimerHandle DotManagerHandle;
 	FTimerHandle DurationHandle;
+	FTimerHandle DotMgHandle[10];
+	uint32 MgNum = 0;
 
+	UPROPERTY()
+	TMap<AActor*, FTimerHandle> TimerHandleMap;
 
 	UFUNCTION()
 	void RepeatingDamage(uint32 Num);
@@ -301,7 +305,5 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Skill")
 	TSubclassOf<class AMagicProjectile> MagicProjectileClass;
-
-	
 
 };
