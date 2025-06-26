@@ -98,9 +98,6 @@ EBTNodeResult::Type UBTTask_Charge::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     MoveComp->MaxWalkSpeed = ChargeSpeed;
 
     bool bIsTarget = false;
-
-    
-    
     
     return EBTNodeResult::InProgress;
     //return EBTNodeResult::Failed;

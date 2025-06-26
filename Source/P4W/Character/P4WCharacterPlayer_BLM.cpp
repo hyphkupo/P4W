@@ -339,6 +339,7 @@ void AP4WCharacterPlayer_BLM::BlizzardAttack(const FInputActionValue& Value)
 				{
 					bCanPlayBlizzardAttack = true;
 
+					// 나이아가라 이펙트 스폰
 					ACharacter* Char = Cast<ACharacter>(HitTarget);
 
 					BlizzardImpactEffectComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
@@ -445,8 +446,6 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 
 		Stat->ApplyUseMp(800.0f);
 
-		
-
 		//PlayFireAttackAnimation();
 		//GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
@@ -467,7 +466,6 @@ void AP4WCharacterPlayer_BLM::FireAttack(const FInputActionValue& Value)
 					{
 						ServerRPCFireVFX(ThunderImpactEffect, HitTarget);
 					}
-					
 				}
 			), CastingTime, false
 		);

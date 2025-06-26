@@ -192,9 +192,7 @@ AP4WCharacterBase::AP4WCharacterBase()
 	SpringArm->TargetArmLength = 400.0f;
 	SpringArm->bUsePawnControlRotation = true;
 	SpringArm->SetupAttachment(GetCapsuleComponent());
-	SpringArm->SocketOffset = FVector(0.0f, 0.0f, 90.0f);
-	//SpringArm->TargetOffset = FVector(0.0f, 0.0f, 90.0f);
-	//SpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 90.0f));
+	InitialControllerRotation.Pitch = -30.0f;
 	
 	// 벽에 부딪히면 자동으로 카메라를 앞으로 이동하도록 하는 변수
 	SpringArm->bDoCollisionTest = false;
@@ -247,6 +245,8 @@ void AP4WCharacterBase::PostInitializeComponents()
 void AP4WCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	GetController()->SetControlRotation(InitialControllerRotation);
 
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
