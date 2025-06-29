@@ -25,8 +25,8 @@ public:
 	void UpdateExpBar(float NewCurrentExp, float NewMaxExp);
 	void UpdateStat(const FP4WCharacterStat& BaseStat, const FP4WCharacterStat& ModifierStat);
 
-	UPROPERTY()
-	TObjectPtr<class UP4WCooltimeWidget> CooltimeBar;
+	//UPROPERTY()
+	//TObjectPtr<class UP4WCooltimeWidget> CooltimeBar;
 
 	//UFUNCTION()
 	//void StartCooltime(float Duration);

@@ -72,8 +72,8 @@ void UP4WHUDWidget::NativeConstruct()
 	MpBar = Cast<UP4WMpBarWidget>(GetWidgetFromName(TEXT("WidgetMPBar")));
 	ensure(MpBar);
 
-	CooltimeBar = Cast<UP4WCooltimeWidget>(GetWidgetFromName(TEXT("WidgetCooltimeBar2")));
-	ensure(CooltimeBar);
+	//CooltimeBar = Cast<UP4WCooltimeWidget>(GetWidgetFromName(TEXT("WidgetCooltimeBar2")));
+	//ensure(CooltimeBar);
 
 	//CharacterStat = Cast<UP4WCharacterStatWidget>(GetWidgetFromName(TEXT("WidgetCharacterStat")));
 	//ensure(CharacterStat);
