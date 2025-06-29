@@ -246,7 +246,10 @@ void AP4WCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetController()->SetControlRotation(InitialControllerRotation);
+	if (GetController())
+	{
+		GetController()->SetControlRotation(InitialControllerRotation);
+	}
 
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
